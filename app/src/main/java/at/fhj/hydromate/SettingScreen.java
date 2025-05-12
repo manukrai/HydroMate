@@ -1,10 +1,16 @@
 package at.fhj.hydromate;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +19,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class SettingScreen extends AppCompatActivity {
+
+    private StepCounterManager stepCounterManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +32,25 @@ public class SettingScreen extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        TextView tvStepsView = findViewById(R.id.tvSteps);
+
+        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + "Steps");});
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        stepCounterManager.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stepCounterManager.stop();
+    }
+
+
 
     public void startMainScreen(View view) {
         Intent intent = new Intent(SettingScreen.this, MainScreen.class);
