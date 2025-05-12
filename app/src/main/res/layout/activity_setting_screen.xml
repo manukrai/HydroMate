@@ -64,15 +64,15 @@
         app:suffixText="kg">
 
         <EditText
-            style="@style/textViewStyle"
             android:id="@+id/etWeight"
+            style="@style/textViewStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Weight"
             android:inputType="numberDecimal"
             android:textAlignment="center"
-            android:textSize="24sp"/>
+            android:textSize="24sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -114,6 +114,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <RadioGroup
+        android:id="@+id/rbGroupGender"
         android:layout_width="wrap_content"
         android:layout_height="77dp"
         android:gravity="center"
