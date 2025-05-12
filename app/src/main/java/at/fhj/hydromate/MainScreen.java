@@ -2,9 +2,11 @@ package at.fhj.hydromate;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,41 +48,18 @@ public class MainScreen extends AppCompatActivity {
     public void startDrinkScreen(View view) {
         Intent intent = new Intent(MainScreen.this, DrinkScreen.class);
 
+        Map<Integer, String> drinkMap = new HashMap<>();
+        drinkMap.put(R.id.btWater, "water");
+        drinkMap.put(R.id.btCoffee, "coffee");
+        drinkMap.put(R.id.btJuice, "juice");
+        drinkMap.put(R.id.btTea, "tea");
+        drinkMap.put(R.id.btMilk, "milk");
+        drinkMap.put(R.id.btBeer, "beer");
+        drinkMap.put(R.id.btStrongAlcohol, "strongAlcohol");
 
-
-        if(view.getId() == R.id.btWater)
-        {
-            intent.putExtra("drinkType","water");
-        }
-
-        if(view.getId() == R.id.btCoffee)
-        {
-            intent.putExtra("drinkType","coffee");
-        }
-
-        if(view.getId() == R.id.btJuice)
-        {
-            intent.putExtra("drinkType","juice");
-        }
-
-        if(view.getId() == R.id.btTea)
-        {
-            intent.putExtra("drinkType","tea");
-        }
-
-        if(view.getId() == R.id.btMilk)
-        {
-            intent.putExtra("drinkType","milk");
-        }
-
-        if(view.getId() == R.id.btBeer)
-        {
-            intent.putExtra("drinkType","beer");
-        }
-
-        if(view.getId() == R.id.btStrongAlcohol)
-        {
-            intent.putExtra("drinkType","strongAlcohol");
+        String drinkType = drinkMap.get(view.getId());
+        if (drinkType != null) {
+            intent.putExtra("drinkType", drinkType);
         }
 
         startActivity(intent);
