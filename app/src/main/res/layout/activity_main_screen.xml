@@ -1,195 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:fillViewport="true"
     tools:context=".MainScreen">
 
-    <TextView
-        android:id="@+id/tvMl2"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="168dp"
-        android:text="HydroMate"
-        android:textAlignment="center"
-        android:textColor="#3F51B5"
-        android:textColorLink="#3F51B5"
-        android:textSize="36sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.046" />
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="409dp"
-        android:layout_height="37dp"
-        android:layout_marginTop="612dp"
-        android:text="30"
-        android:textAlignment="center"
-        android:textColor="#3F51B5"
-        android:textColorLink="#3F51B5"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tvSteps"
-        android:layout_width="409dp"
-        android:layout_height="37dp"
-        android:layout_marginTop="660dp"
-        android:text="Steps"
-        android:textAlignment="center"
-        android:textColor="#3F51B5"
-        android:textColorLink="#3F51B5"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <HorizontalScrollView
-        android:id="@+id/horizontalScrollView"
-        android:layout_width="409dp"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="50px"
-        android:layout_marginRight="50px"
-        android:layout_marginBottom="140dp"
-        android:padding="10dp"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <LinearLayout
+        <TextView
+            style="@style/textViewStyle"
+            android:id="@+id/tvMl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginTop="100sp"
+            android:layout_marginBottom="8dp"
+            android:text="0 ml / 0 ml"
+            android:textAlignment="center"
+            android:textSize="48sp" />
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 1"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/water_bottle" />
+        <TextView
+            style="@style/textViewStyle"
+            android:id="@+id/tvProcent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="0% of your Goal"
+            android:textAlignment="center"
+            android:textSize="16sp" />
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 2"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/coffee_cup" />
+        <HorizontalScrollView
+            android:id="@+id/horizontalScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="150sp"
+            android:paddingVertical="16dp"
+            android:scrollbars="none">
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 3"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/beer" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 4"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/juice" />
+                <ImageButton
+                    android:id="@+id/btWater"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Water Bottle"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/water_bottle" />
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 5"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/tea" />
+                <ImageButton
+                    android:id="@+id/btCoffee"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Coffee"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/coffee_cup" />
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 6"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/milk" />
-
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginEnd="10dp"
-                android:background="@null"
-                android:contentDescription="Icon 7"
-                android:onClick="startDrinkScreen"
-                android:src="@drawable/liquor" />
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="64dp"
-        android:foregroundGravity="center_vertical|center|center_horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.846"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.446"
-        app:srcCompat="@drawable/bootle" />
-
-    <TextView
-        android:id="@+id/tvMl"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="0 ml"
-        android:textAlignment="center"
-        android:textColor="#2877C7"
-        android:textSize="48sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.142" />
-
-    <TextView
-        android:id="@+id/tvProcent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="0% of your Goal"
-        android:textAlignment="center"
-        android:textColor="#2877C7"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.224" />
-
-    <Button
-        android:id="@+id/button3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:onClick="startSettingsScreen"
-        android:text="Settings"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.996"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+                <ImageButton
+                    android:id="@+id/btJuice"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Juice"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/juice" />
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                <ImageButton
+                    android:id="@+id/btTea"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Tea"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/tea" />
+
+                <ImageButton
+                    android:id="@+id/btMilk"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Milk"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/milk" />
+
+                <ImageButton
+                    android:id="@+id/btBeer"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Beer"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/beer" />
+
+                <ImageButton
+                    android:id="@+id/btStrongAlcohol"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@null"
+                    android:contentDescription="Liquor"
+                    android:onClick="startDrinkScreen"
+                    android:src="@drawable/liquor" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <Button
+            android:id="@+id/btSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="startSettingsScreen"
+            android:text="Settings" />
+    </LinearLayout>
+</ScrollView>

@@ -11,26 +11,51 @@
     tools:context=".SettingScreen">
 
     <TextView
-        android:id="@+id/textView"
+        style="@style/textViewStyle"
+        android:id="@+id/tvSettingsText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10px"
         android:text="Settings"
         android:textAlignment="center"
-        android:textColor="#3F51B5"
-        android:textColorLink="#3F51B5"
-        android:textSize="48sp"
-        android:textStyle="bold" />
+        android:textSize="48sp" />
 
     <TextView
-        android:id="@+id/textView2"
+        style="@style/textViewStyle"
+        android:id="@+id/tvTypeYourDataText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="100px"
         android:text="Type in your Data"
-        android:textAlignment="center"
-        android:textColor="#3F51B5"
-        android:textStyle="bold" />
+        android:textAlignment="center"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            style="@style/textViewStyle"
+            android:id="@+id/tvTemperature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="-°C"
+            android:textAlignment="center"
+            android:textSize="20sp"/>
+
+        <TextView
+            style="@style/textViewStyle"
+            android:id="@+id/tvSteps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="- Steps"
+            android:textAlignment="center"
+            android:textSize="20sp"/>
+    </LinearLayout>
+
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
@@ -39,17 +64,15 @@
         app:suffixText="kg">
 
         <EditText
-            android:id="@+id/editTextNumberDecimal"
+            style="@style/textViewStyle"
+            android:id="@+id/etWeight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Weight"
             android:inputType="numberDecimal"
             android:textAlignment="center"
-            android:textColor="#3F51B5"
-            android:textColorLink="#3F51B5"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textSize="24sp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -60,17 +83,15 @@
         app:suffixText="cm">
 
         <EditText
-            android:id="@+id/editTextNumberDecimal2"
+            style="@style/textViewStyle"
+            android:id="@+id/etHeight"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Height"
             android:inputType="numberDecimal"
             android:textAlignment="center"
-            android:textColor="#3F51B5"
-            android:textColorLink="#3F51B5"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textSize="24sp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -78,20 +99,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        app:suffixText="Jahre">
+        app:suffixText="Years">
 
         <EditText
-            android:id="@+id/editTextNumberDecimal3"
+            style="@style/textViewStyle"
+            android:id="@+id/etAge"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Age"
             android:inputType="numberDecimal"
             android:textAlignment="center"
-            android:textColor="#3F51B5"
-            android:textColorLink="#3F51B5"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textSize="24sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <RadioGroup
@@ -101,28 +120,28 @@
         android:orientation="horizontal">
 
         <RadioButton
-            android:id="@+id/radioButton"
+            style="@style/textViewStyle"
+            android:id="@+id/rbMale"
             android:layout_width="85dp"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="Male"
-            android:textColor="#3F51B5"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textSize="20sp" />
 
         <RadioButton
-            android:id="@+id/radioButton2"
+            style="@style/textViewStyle"
+            android:id="@+id/rbFemale"
             android:layout_width="104dp"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="Female"
-            android:textColor="#3F51B5"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textSize="20sp" />
     </RadioGroup>
 
+
+
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/btSave"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="startMainScreen"
