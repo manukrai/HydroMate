@@ -16,4 +16,8 @@ public interface HydrationDao {
 
     @Query("SELECT SUM(volume) FROM HydrationEntry WHERE date = :todayDate")
     int getTotalVolumeForToday(String todayDate);
+
+    @Query("SELECT SUM(volume * procent) FROM HydrationEntry WHERE date = :todayDate")
+    double getEffectiveHydrationForToday(String todayDate);
+
 }

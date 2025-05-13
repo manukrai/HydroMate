@@ -74,7 +74,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
         executor.execute(() -> {
             String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-            int volume = db.hydrationDao().getTotalVolumeForToday(todayDate);
+            double volume = db.hydrationDao().getEffectiveHydrationForToday(todayDate);
 
             // Optional: zurück an UI-Thread
             new Handler(Looper.getMainLooper()).post(() -> {
