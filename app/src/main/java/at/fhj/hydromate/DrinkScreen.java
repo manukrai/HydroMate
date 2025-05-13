@@ -26,6 +26,8 @@ public class DrinkScreen extends AppCompatActivity {
     private HydrationDatabase db;
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

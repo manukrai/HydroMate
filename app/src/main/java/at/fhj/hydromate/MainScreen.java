@@ -12,6 +12,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -33,6 +39,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.room.Room;
 
+import org.json.JSONObject;
+
 
 public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
 
@@ -46,6 +54,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     private SharedPreferences sp;
     private HydrationDatabase db;
 
+    private final String apiKey = "38127a56fbc2778ac0038588c589242a";
+
+    double temperature = 0.00;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,6 +69,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             return insets;
         });
 
+
+
         sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
         db = Room.databaseBuilder(getApplicationContext(),
@@ -66,11 +80,34 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
         TextView textMili = findViewById(R.id.tvMl);
         TextView textProcent = findViewById(R.id.tvProcent);
+        this.tvTemperatureView = findViewById(R.id.tvTemperature);
+        this.tvStepsView = findViewById(R.id.tvSteps);
 
+
+        if (sp.getInt("weight", 0) == 0 ||
+            sp.getInt("height", 0) == 0 ||
+            sp.getInt("age", 0) == 0 ||
+            sp.getString("gender", "").equals(""))
+        {
+            textMili.setText("Please change settings!");
+            textProcent.setText("");
+        }
+
+        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
+        gpsHelper = new GPSHelper(this);
+
+        if (!checkActivityPermission()) {
+            requestActivityPermission();
+        } else if (!checkLocationPermission()) {
+            requestLocationPermission();
+        } else {
+            startStepCounter();
+            startLocationRequest();
+        }
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        double dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), 15, 5000);
+        double dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), temperature, 5000);
 
         executor.execute(() -> {
             String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
@@ -85,37 +122,48 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             });
         });
 
+    }
 
 
+    public void fetchTemperature(double lat , double lon){
+        new Thread(() -> {
+            try {
+                String urlString = String.format(
+                        Locale.US,
+                        "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric",
+                        lat, lon, this.apiKey
+                );
+                URL url = new URL(urlString);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
 
+                InputStream in = new BufferedInputStream(conn.getInputStream());
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                StringBuilder result = new StringBuilder();
+                String line;
 
-        if (sp.getInt("weight", 0) == 0 ||
-            sp.getInt("height", 0) == 0 ||
-            sp.getInt("age", 0) == 0 ||
-            sp.getString("gender", "").equals(""))
-        {
-            textMili.setText("Please change settings!");
-            textProcent.setText("");
-        }
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
 
+                JSONObject json = new JSONObject(result.toString());
+                double temp = json.getJSONObject("main").getDouble("temp");
 
-        this.tvTemperatureView = findViewById(R.id.tvTemperature);
-        this.tvStepsView = findViewById(R.id.tvSteps);
+                // Zurück auf den UI-Thread
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    tvTemperatureView.setText(temp + "°C");
+                    temperature = temp;
+                });
 
-
-        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
-        gpsHelper = new GPSHelper(this);
-
-
-        if (!checkActivityPermission()) {
-            requestActivityPermission();
-        } else if (!checkLocationPermission()) {
-            requestLocationPermission();
-        } else {
-            startStepCounter();
-            startLocationRequest();
-        }
-
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    tvTemperatureView.setText("Fehler beim Laden");
+                    temperature = 0.00;
+                });
+            }
+        }).start();
     }
 
     private boolean checkActivityPermission() {
@@ -205,8 +253,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             @Override
             public void onLocationReceived(String location) {
                 Log.d("GPS", "Standort: " + location);
-                TextView tvTemperatureView = findViewById(R.id.tvTemperature);
-                tvTemperatureView.setText(location);
+                String[] parts = location.split(",");
+                double lat = Double.parseDouble(parts[0].trim());
+                double lon = Double.parseDouble(parts[1].trim());
+                fetchTemperature(lat,lon);
             }
         });
     }
@@ -239,7 +289,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         startActivity(intent);
     }
 
-    public double getDailyIntake(int weight, int height,int age, String gender, int temperature, int steps)
+    public double getDailyIntake(int weight, int height,int age, String gender, double temperature, int steps)
     {
         double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
