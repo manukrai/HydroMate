@@ -67,12 +67,19 @@ public class DrinkScreen extends AppCompatActivity {
 
         intent.putExtra("drinkProcent",drinkProcent);
 
+
+        Log.d("CREATION",view.getId()+"");
+
+
         if(view.getId() == R.id.btSave)
         {
-            EditText etVolume = findViewById(R.id.etVolume);
-            if(etVolume != null)
+
+            EditText etVolumeText = findViewById(R.id.etVolume);
+            Log.d("CREATION",etVolumeText.getText()+"");
+
+            if(etVolumeText.getText() != null)
             {
-                intent.putExtra("volume",etVolume.getText());
+                intent.putExtra("volume",Integer.parseInt(etVolumeText.getText().toString()));
             }
             else
             {

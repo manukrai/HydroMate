@@ -13,7 +13,35 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
+        android:layout_marginTop="100sp"
         android:padding="24dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                style="@style/textViewStyle"
+                android:id="@+id/tvTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="-°C"
+                android:textAlignment="center"
+                android:textSize="20sp"/>
+
+            <TextView
+                style="@style/textViewStyle"
+                android:id="@+id/tvSteps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="- Steps"
+                android:textAlignment="center"
+                android:textSize="20sp"/>
+        </LinearLayout>
 
 
         <TextView
@@ -21,11 +49,10 @@
             android:id="@+id/tvMl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="100sp"
             android:layout_marginBottom="8dp"
             android:text="0 ml / 0 ml"
             android:textAlignment="center"
-            android:textSize="48sp" />
+            android:textSize="36sp" />
 
         <TextView
             style="@style/textViewStyle"

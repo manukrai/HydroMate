@@ -29,33 +29,6 @@
         android:text="Type in your Data"
         android:textAlignment="center"/>
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            style="@style/textViewStyle"
-            android:id="@+id/tvTemperature"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="-°C"
-            android:textAlignment="center"
-            android:textSize="20sp"/>
-
-        <TextView
-            style="@style/textViewStyle"
-            android:id="@+id/tvSteps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="- Steps"
-            android:textAlignment="center"
-            android:textSize="20sp"/>
-    </LinearLayout>
-
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"

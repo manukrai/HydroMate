@@ -13,6 +13,7 @@ import java.util.Locale;
 
 public class StepCounterManager implements SensorEventListener {
 
+
     private final SensorManager sensorManager;
     private final Sensor stepCounterSensor;
     private final SharedPreferences prefs;

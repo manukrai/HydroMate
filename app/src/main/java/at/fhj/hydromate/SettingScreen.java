@@ -20,7 +20,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class SettingScreen extends AppCompatActivity {
 
-    private StepCounterManager stepCounterManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,22 +32,6 @@ public class SettingScreen extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        TextView tvStepsView = findViewById(R.id.tvSteps);
-
-        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + "Steps");});
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        stepCounterManager.start();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stepCounterManager.stop();
     }
 
 

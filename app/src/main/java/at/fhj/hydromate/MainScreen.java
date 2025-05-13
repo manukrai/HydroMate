@@ -1,23 +1,32 @@
 package at.fhj.hydromate;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import java.util.HashMap;
 import java.util.Map;
+import android.Manifest;
+import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 
+public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
 
-
-public class MainScreen extends AppCompatActivity {
+    private StepCounterManager stepCounterManager;
+    private GPSHelper gpsHelper;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +52,71 @@ public class MainScreen extends AppCompatActivity {
 
 
         textProcent.setText(roundedProcent + " % of your Goal");
+
+        TextView tvStepsView = findViewById(R.id.tvSteps);
+
+        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
+
+        gpsHelper = new GPSHelper(this);
+
+        gpsHelper.requestLocation(new LocationCallback() {
+            @Override
+            public void onLocationReceived(String location) {
+                // Hier hast du den Standort
+                Log.d("GPS", "Standort: " + location);
+                Toast.makeText(MainScreen.this, "Standort: " + location, Toast.LENGTH_LONG).show();
+            }
+        });
+
+        stepCounterManager = new StepCounterManager(this, this);
+        stepCounterManager.start(); // Startet den Sensor
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stepCounterManager.stop(); // Wichtig zum Ressourcen freigeben
+    }
+
+    @Override
+    public void onStepsUpdated(int stepsToday) {
+        // Hier bekommst du die aktuellen Schritte des Tages
+        Log.d("Steps", "Schritte heute: " + stepsToday);
+        // z.B. UI aktualisieren:
+        TextView stepTextView = findViewById(R.id.tvSteps);
+        stepTextView.setText("Schritte heute: " + stepsToday);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1001) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                gpsHelper.requestLocation(new LocationCallback() {
+                    @Override
+                    public void onLocationReceived(String location) {
+                        Log.d("GPS", "Standort nach Berechtigung: " + location);
+                        Toast.makeText(MainScreen.this, "Standort: " + location, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } else {
+                Toast.makeText(this, "Standortberechtigung wurde verweigert", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        stepCounterManager.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stepCounterManager.stop();
     }
 
     public void startDrinkScreen(View view) {
