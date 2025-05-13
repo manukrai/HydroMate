@@ -2,12 +2,14 @@ package at.fhj.hydromate;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,6 +22,12 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class SettingScreen extends AppCompatActivity {
 
+    private SharedPreferences sp;
+
+    private EditText etWeight;
+    private EditText etHeight;
+    private EditText etAge;
+    private RadioGroup rgGender;
 
 
     @Override
@@ -32,6 +40,31 @@ public class SettingScreen extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        sp = getApplicationContext().getSharedPreferences("UserPrefs",Context.MODE_PRIVATE);
+
+        etWeight = findViewById(R.id.etWeight);
+        etHeight = findViewById(R.id.etHeight);
+        etAge = findViewById(R.id.etAge);
+        rgGender = findViewById(R.id.rbGroupGender);
+
+        etWeight.setText(sp.getInt("weight",0)+"");
+        etHeight.setText(sp.getInt("height",0)+"");
+        etAge.setText(sp.getInt("age",0)+"");
+
+        String gender = sp.getString("gender","Male");
+
+        for (int i = 0; i < rgGender.getChildCount(); i++) {
+            View child = rgGender.getChildAt(i);
+            if (child instanceof RadioButton) {
+                RadioButton radioButton = (RadioButton) child;
+                if (radioButton.getText().toString().equals(gender)) {
+                    radioButton.setChecked(true);
+                    break;
+                }
+            }
+        }
+
     }
 
 
@@ -39,15 +72,18 @@ public class SettingScreen extends AppCompatActivity {
     public void startMainScreen(View view) {
         Intent intent = new Intent(SettingScreen.this, MainScreen.class);
 
-        EditText etWeight = findViewById(R.id.etWeight);
-        EditText etHeight = findViewById(R.id.etHeight);
-        EditText etAge = findViewById(R.id.etAge);
-        RadioGroup rbGender = findViewById(R.id.rbGroupGender);
+        SharedPreferences.Editor editor = sp.edit();
 
-        intent.putExtra("weight",etWeight.getText());
-        intent.putExtra("height",etHeight.getText());
-        intent.putExtra("age",etAge.getText());
-        intent.putExtra("gender","");
+        editor.putInt("weight",Integer.parseInt(etWeight.getText().toString()));
+        editor.putInt("height",Integer.parseInt(etHeight.getText().toString()));
+        editor.putInt("age",Integer.parseInt(etAge.getText().toString()));
+
+        int selectedId = rgGender.getCheckedRadioButtonId();
+        RadioButton selectedButton = (RadioButton) findViewById(selectedId);
+
+        editor.putString("gender",selectedButton.getText().toString());
+
+        editor.commit();
 
         startActivity(intent);
     }

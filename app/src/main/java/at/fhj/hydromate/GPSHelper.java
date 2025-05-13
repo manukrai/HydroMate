@@ -5,14 +5,19 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.location.LocationRequest;
 
 public class GPSHelper {
 
@@ -32,14 +37,31 @@ public class GPSHelper {
             return;
         }
 
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(activity, location -> {
-                    if (location != null) {
-                        String coordinates = location.getLatitude() + "," + location.getLongitude();
-                        callback.onLocationReceived(coordinates);
-                    } else {
-                        callback.onLocationReceived("Location not available");
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+                .setWaitForAccurateLocation(false)
+                .setMinUpdateIntervalMillis(500)
+                .setMaxUpdateDelayMillis(1000)
+                .setMaxUpdates(1)
+                .build();
+
+
+
+        com.google.android.gms.location.LocationCallback locationCallback =
+                new com.google.android.gms.location.LocationCallback() {
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                        if (locationResult != null && !locationResult.getLocations().isEmpty()) {
+                            Location location = locationResult.getLastLocation();
+                            String coordinates = location.getLatitude() + "," + location.getLongitude();
+                            Log.d("CREATION",coordinates);
+                            callback.onLocationReceived(coordinates);
+                        } else {
+                            Log.d("CREATION","not available");
+                            callback.onLocationReceived("Location not available");
+                        }
                     }
-                });
+                };
+
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
     }
 }
