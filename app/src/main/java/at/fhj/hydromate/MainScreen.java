@@ -4,16 +4,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import android.Manifest;
-import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
@@ -24,6 +31,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.room.Room;
 
 
 public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
@@ -36,6 +44,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     private TextView tvStepsView;
     private TextView tvTemperatureView;
     private SharedPreferences sp;
+    private HydrationDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +59,34 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
         sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
+        db = Room.databaseBuilder(getApplicationContext(),
+                                HydrationDatabase.class, "hydration-db")
+                                .build();
+
+
         TextView textMili = findViewById(R.id.tvMl);
         TextView textProcent = findViewById(R.id.tvProcent);
 
-        int volume = getIntent().getIntExtra("volume", 0);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
         double dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), 15, 5000);
 
-        textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
+        executor.execute(() -> {
+            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            int volume = db.hydrationDao().getTotalVolumeForToday(todayDate);
 
-        double procent = (volume / dailyIntake) * 100;
-        double roundedProcent = Math.round(procent * 100.0) / 100.0;
+            // Optional: zurück an UI-Thread
+            new Handler(Looper.getMainLooper()).post(() -> {
+                textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
+                double procent = (volume / dailyIntake) * 100;
+                double roundedProcent = Math.round(procent * 100.0) / 100.0;
+                textProcent.setText(roundedProcent + " % of your Goal");
+            });
+        });
+
+
+
 
 
         if (sp.getInt("weight", 0) == 0 ||
@@ -68,12 +95,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             sp.getString("gender", "").equals(""))
         {
             textMili.setText("Please change settings!");
-            textMili.setTextColor(Color.parseColor("#FF0000"));
             textProcent.setText("");
-        }
-        else
-        {
-            textProcent.setText(roundedProcent + " % of your Goal");
         }
 
 
@@ -149,7 +171,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 startStepCounter();
             } else {
                 tvStepsView.setText("Allow Actvity!");
-                tvStepsView.setTextColor(Color.parseColor("#FF0000"));
 
             }
 
@@ -173,7 +194,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 startLocationRequest();
             } else {
                 tvTemperatureView.setText("Allow Location!");
-                tvTemperatureView.setTextColor(Color.parseColor("#FF0000"));
             }
         }
     }
