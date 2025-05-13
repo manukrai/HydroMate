@@ -37,25 +37,25 @@ public class DrinkScreen extends AppCompatActivity {
 
         switch(intent.getStringExtra("drinkType"))
         {
-            case "water":imageView.setImageResource(R.drawable.water_bottle);
+            case "water":imageView.setImageResource(R.drawable.water_bottle256);
                 drinkProcent = 1.00;
                 break;
-            case "coffee":imageView.setImageResource(R.drawable.coffee_cup);
+            case "coffee":imageView.setImageResource(R.drawable.coffee_cup256);
                 drinkProcent = 0.95;
                 break;
-            case "juice":imageView.setImageResource(R.drawable.juice);
+            case "juice":imageView.setImageResource(R.drawable.juice256);
                 drinkProcent = 0.90;
                 break;
-            case "tea":imageView.setImageResource(R.drawable.tea);
+            case "tea":imageView.setImageResource(R.drawable.tea256);
                 drinkProcent = 1.00;
                 break;
-            case "milk":imageView.setImageResource(R.drawable.milk);
+            case "milk":imageView.setImageResource(R.drawable.milk256);
                 drinkProcent = 1.15;
                 break;
-            case "beer":imageView.setImageResource(R.drawable.beer);
+            case "beer":imageView.setImageResource(R.drawable.beer256);
                 drinkProcent = 0.80;;
                 break;
-            case "strongAlcohol":imageView.setImageResource(R.drawable.liquor);
+            case "strongAlcohol":imageView.setImageResource(R.drawable.liquor256);
                 drinkProcent = 0.50;
                 break;
         }
