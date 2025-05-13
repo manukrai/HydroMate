@@ -1,7 +1,10 @@
 package at.fhj.hydromate;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -26,7 +29,11 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private StepCounterManager stepCounterManager;
     private GPSHelper gpsHelper;
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private static final int ACTIVITY_RECOGNITION_REQUEST_CODE = 1001;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1002;
+
+    private TextView tvStepsView;
+    private SharedPreferences sp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,85 +46,146 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             return insets;
         });
 
+        sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+
         TextView textMili = findViewById(R.id.tvMl);
         TextView textProcent = findViewById(R.id.tvProcent);
 
-        int volume = getIntent().getIntExtra("volume",0);
-        double dailyIntake = getDailyIntake(86,185,22,"Male",15,5000);
+        int volume = getIntent().getIntExtra("volume", 0);
+        double dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), 15, 5000);
 
-        textMili.setText(volume + " ml / " +(int)dailyIntake + " ml");
+        textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
 
-        double procent = (volume/dailyIntake) * 100;
+        double procent = (volume / dailyIntake) * 100;
         double roundedProcent = Math.round(procent * 100.0) / 100.0;
 
 
-        textProcent.setText(roundedProcent + " % of your Goal");
+        if (sp.getInt("weight", 0) == 0 ||
+            sp.getInt("height", 0) == 0 ||
+            sp.getInt("age", 0) == 0 ||
+            sp.getString("gender", "").equals(""))
+        {
+            textMili.setText("0 ml / 0 ml");
+            textProcent.setText("Please Type in Data first!");
+        }
+        else
+        {
+            textProcent.setText(roundedProcent + " % of your Goal");
+        }
 
-        TextView tvStepsView = findViewById(R.id.tvSteps);
+
+
+        this.tvStepsView = findViewById(R.id.tvSteps);
+        TextView tvTemperatureView = findViewById(R.id.tvTemperature);
 
         stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
-
         gpsHelper = new GPSHelper(this);
 
-        gpsHelper.requestLocation(new LocationCallback() {
-            @Override
-            public void onLocationReceived(String location) {
-                // Hier hast du den Standort
-                Log.d("GPS", "Standort: " + location);
-                Toast.makeText(MainScreen.this, "Standort: " + location, Toast.LENGTH_LONG).show();
-            }
-        });
 
-        stepCounterManager = new StepCounterManager(this, this);
-        stepCounterManager.start(); // Startet den Sensor
+        if (!checkActivityPermission()) {
+            requestActivityPermission();
+        } else if (!checkLocationPermission()) {
+            requestLocationPermission();
+        } else {
+            startStepCounter();
+            startLocationRequest();
+        }
 
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stepCounterManager.stop(); // Wichtig zum Ressourcen freigeben
+    private boolean checkActivityPermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+                        == PackageManager.PERMISSION_GRANTED;
     }
+
+    private void requestActivityPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACTIVITY_RECOGNITION},
+                    ACTIVITY_RECOGNITION_REQUEST_CODE);
+        }
+    }
+
+    private boolean checkLocationPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED;
+    }
+
+
+    private void requestLocationPermission() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                LOCATION_PERMISSION_REQUEST_CODE);
+    }
+
+
+
 
     @Override
     public void onStepsUpdated(int stepsToday) {
-        // Hier bekommst du die aktuellen Schritte des Tages
-        Log.d("Steps", "Schritte heute: " + stepsToday);
-        // z.B. UI aktualisieren:
-        TextView stepTextView = findViewById(R.id.tvSteps);
-        stepTextView.setText("Schritte heute: " + stepsToday);
+        tvStepsView = findViewById(R.id.tvSteps);
+        tvStepsView.setText(stepsToday+"");
+    }
+
+    private void startStepCounter() {
+        // Hier initialisierst du deinen StepCounterManager
+        stepCounterManager = new StepCounterManager(this, this); // `this` ist StepUpdateListener
+        stepCounterManager.start();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1001) {
+
+        if (requestCode == ACTIVITY_RECOGNITION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                gpsHelper.requestLocation(new LocationCallback() {
-                    @Override
-                    public void onLocationReceived(String location) {
-                        Log.d("GPS", "Standort nach Berechtigung: " + location);
-                        Toast.makeText(MainScreen.this, "Standort: " + location, Toast.LENGTH_LONG).show();
-                    }
-                });
+                startStepCounter();
             } else {
-                Toast.makeText(this, "Standortberechtigung wurde verweigert", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Aktivitätsberechtigung verweigert", Toast.LENGTH_SHORT).show();
+            }
+
+            // Standortberechtigung trotzdem prüfen!
+            if (!checkLocationPermission()) {
+                requestLocationPermission();
+            } else {
+                startLocationRequest();
+            }
+
+        } else if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            boolean permissionGranted = false;
+            for (int result : grantResults) {
+                if (result == PackageManager.PERMISSION_GRANTED) {
+                    permissionGranted = true;
+                    break;
+                }
+            }
+
+            if (permissionGranted) {
+                startLocationRequest();
+            } else {
+                Toast.makeText(this, "Standortberechtigung verweigert", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        stepCounterManager.start();
+
+
+    private void startLocationRequest() {
+        gpsHelper.requestLocation(new LocationCallback() {
+            @Override
+            public void onLocationReceived(String location) {
+                Log.d("GPS", "Standort: " + location);
+                TextView tvTemperatureView = findViewById(R.id.tvTemperature);
+                tvTemperatureView.setText(location);
+            }
+        });
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stepCounterManager.stop();
-    }
+
 
     public void startDrinkScreen(View view) {
         Intent intent = new Intent(MainScreen.this, DrinkScreen.class);
@@ -147,7 +215,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     public double getDailyIntake(int weight, int height,int age, String gender, int temperature, int steps)
     {
-        double dailyIntake = (gender == "Male" ? 35 : 31) * weight;
+        double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
         // Alter berücksichtigen
         if (age >= 65)
