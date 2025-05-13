@@ -51,12 +51,15 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private TextView tvStepsView;
     private TextView tvTemperatureView;
+    private TextView textMili;
+    private TextView textProcent;
+
+    private double dailyIntake;
     private SharedPreferences sp;
     private HydrationDatabase db;
 
     private final String apiKey = "38127a56fbc2778ac0038588c589242a";
 
-    double temperature = 0.00;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +81,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                                 .build();
 
 
-        TextView textMili = findViewById(R.id.tvMl);
-        TextView textProcent = findViewById(R.id.tvProcent);
+        this.textMili = findViewById(R.id.tvMl);
+        this.textProcent = findViewById(R.id.tvProcent);
         this.tvTemperatureView = findViewById(R.id.tvTemperature);
         this.tvStepsView = findViewById(R.id.tvSteps);
 
@@ -107,7 +110,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        double dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), temperature, 5000);
+        dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), 0, 5000);
 
         executor.execute(() -> {
             String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
@@ -152,7 +155,27 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 // Zurück auf den UI-Thread
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText(temp + "°C");
-                    temperature = temp;
+                    if (temp >= 20 && temp <= 25)
+                    {
+                        dailyIntake += 200;
+                    }
+                    else if (temp > 25 && temp <= 30)
+                    {
+                        dailyIntake += 500;
+                    }
+                    else if (temp > 30)
+                    {
+                        dailyIntake += 700;
+                    }
+
+                    String text = textMili.getText().toString();  // "750 ml / 2000 ml"
+                    String[] parts = text.split(" ");             // ["750", "ml", "/", "2000", "ml"]
+                    double volume = Double.parseDouble(parts[0]);
+
+                    textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
+                    double procent = (volume / dailyIntake) * 100;
+                    double roundedProcent = Math.round(procent * 100.0) / 100.0;
+                    textProcent.setText(roundedProcent + " % of your Goal");
                 });
 
                 conn.disconnect();
@@ -160,7 +183,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 e.printStackTrace();
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText("Fehler beim Laden");
-                    temperature = 0.00;
                 });
             }
         }).start();
@@ -297,20 +319,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         if (age >= 65)
         {
             dailyIntake *= 0.9;
-        }
-
-        // Temperaturzuschlag
-        if (temperature >= 20 && temperature <= 25)
-        {
-            dailyIntake += 200;
-        }
-        else if (temperature > 25 && temperature <= 30)
-        {
-            dailyIntake += 500;
-        }
-        else if (temperature > 30)
-        {
-            dailyIntake += 700;
         }
 
         // Aktivitätszuschlag durch Schritte
