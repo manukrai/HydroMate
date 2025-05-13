@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,6 +34,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1002;
 
     private TextView tvStepsView;
+    private TextView tvTemperatureView;
     private SharedPreferences sp;
 
     @Override
@@ -65,8 +67,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             sp.getInt("age", 0) == 0 ||
             sp.getString("gender", "").equals(""))
         {
-            textMili.setText("0 ml / 0 ml");
-            textProcent.setText("Please Type in Data first!");
+            textMili.setText("Please change settings!");
+            textMili.setTextColor(Color.parseColor("#FF0000"));
+            textProcent.setText("");
         }
         else
         {
@@ -74,9 +77,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         }
 
 
-
+        this.tvTemperatureView = findViewById(R.id.tvTemperature);
         this.tvStepsView = findViewById(R.id.tvSteps);
-        TextView tvTemperatureView = findViewById(R.id.tvTemperature);
+
 
         stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
         gpsHelper = new GPSHelper(this);
@@ -145,7 +148,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startStepCounter();
             } else {
-                Toast.makeText(this, "Aktivitätsberechtigung verweigert", Toast.LENGTH_SHORT).show();
+                tvStepsView.setText("Allow Actvity!");
+                tvStepsView.setTextColor(Color.parseColor("#FF0000"));
+
             }
 
             // Standortberechtigung trotzdem prüfen!
@@ -167,7 +172,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             if (permissionGranted) {
                 startLocationRequest();
             } else {
-                Toast.makeText(this, "Standortberechtigung verweigert", Toast.LENGTH_SHORT).show();
+                tvTemperatureView.setText("Allow Location!");
+                tvTemperatureView.setTextColor(Color.parseColor("#FF0000"));
             }
         }
     }
