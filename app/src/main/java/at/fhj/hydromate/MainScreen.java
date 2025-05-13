@@ -323,6 +323,11 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             dailyIntake += 500;
         }
 
+
+        if(dailyIntake >= 6000)
+        {
+            return 6000;
+        }
         return dailyIntake;
     }
 

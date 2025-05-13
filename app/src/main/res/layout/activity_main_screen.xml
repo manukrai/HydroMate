@@ -34,13 +34,13 @@
                 android:textSize="20sp"/>
 
             <TextView
-                style="@style/textViewStyle"
                 android:id="@+id/tvSteps"
+                style="@style/textViewStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="- Steps"
+                android:text="Steps"
                 android:textAlignment="center"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
         </LinearLayout>
 
 
