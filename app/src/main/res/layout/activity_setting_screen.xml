@@ -5,29 +5,21 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
+    android:layout_marginTop="25dp"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     app:layoutDescription="@xml/activity_main_scene"
     tools:context=".SettingScreen">
 
     <TextView
-        style="@style/textViewStyle"
         android:id="@+id/tvSettingsText"
+        style="@style/textViewStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10px"
         android:text="Settings"
         android:textAlignment="center"
         android:textSize="48sp" />
-
-    <TextView
-        style="@style/textViewStyle"
-        android:id="@+id/tvTypeYourDataText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="100px"
-        android:text="Type in your Data"
-        android:textAlignment="center"/>
 
 
     <com.google.android.material.textfield.TextInputLayout
@@ -56,15 +48,15 @@
         app:suffixText="cm">
 
         <EditText
-            style="@style/textViewStyle"
             android:id="@+id/etHeight"
+            style="@style/textViewStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Height"
             android:inputType="number"
             android:textAlignment="center"
-            android:textSize="24sp"/>
+            android:textSize="24sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -75,8 +67,8 @@
         app:suffixText="Years">
 
         <EditText
-            style="@style/textViewStyle"
             android:id="@+id/etAge"
+            style="@style/textViewStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
@@ -88,29 +80,44 @@
 
     <RadioGroup
         android:id="@+id/rbGroupGender"
-        android:layout_width="wrap_content"
-        android:layout_height="77dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp">
 
         <RadioButton
-            style="@style/textViewStyle"
             android:id="@+id/rbMale"
-            android:layout_width="85dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:button="@null"
+            android:background="@drawable/bg_radio_button"
             android:text="Male"
-            android:textSize="20sp" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue_600"
+            android:gravity="center"
+            android:padding="12dp"
+            android:layout_margin="20dp"/>
 
         <RadioButton
-            style="@style/textViewStyle"
             android:id="@+id/rbFemale"
-            android:layout_width="104dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:button="@null"
+            android:background="@drawable/bg_radio_button"
             android:text="Female"
-            android:textSize="20sp" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue_600"
+            android:gravity="center"
+            android:padding="12dp"
+            android:layout_margin="20dp"/>
     </RadioGroup>
+
 
 
 

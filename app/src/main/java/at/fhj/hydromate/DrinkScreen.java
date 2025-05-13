@@ -94,7 +94,7 @@ public class DrinkScreen extends AppCompatActivity {
 
             EditText etVolumeText = findViewById(R.id.etVolume);
 
-            if(etVolumeText.getText() != null)
+            if(etVolumeText.getText().toString().equals(""))
             {
                 volume = Integer.parseInt(etVolumeText.getText().toString());
             }

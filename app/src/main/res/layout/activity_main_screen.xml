@@ -7,31 +7,32 @@
     android:fillViewport="true"
     tools:context=".MainScreen">
 
+
     <LinearLayout
         android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:layout_marginTop="100sp"
         android:padding="24dp">
 
+
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
-                style="@style/textViewStyle"
                 android:id="@+id/tvTemperature"
+                style="@style/textViewStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
                 android:text="-°C"
                 android:textAlignment="center"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
 
             <TextView
                 android:id="@+id/tvSteps"
@@ -41,36 +42,102 @@
                 android:text="Steps"
                 android:textAlignment="center"
                 android:textSize="20sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btSettings"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:onClick="startSettingsScreen"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/baseline_settings_24"
+                app:tint="@color/blue_600" />
+
+
         </LinearLayout>
 
-
-        <TextView
-            style="@style/textViewStyle"
-            android:id="@+id/tvMl"
+        <EditText
+            android:id="@+id/etDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="0 ml / 0 ml"
-            android:textAlignment="center"
-            android:textSize="36sp" />
+            android:hint="Choose Date"
+            android:focusable="false"
+            android:clickable="true"
+            android:inputType="none"
+            android:drawableEnd="@drawable/baseline_calendar_month_24"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/blue_600"
+            android:background="@drawable/edittext_background" />
 
-        <TextView
-            style="@style/textViewStyle"
-            android:id="@+id/tvProcent"
-            android:layout_width="wrap_content"
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:text="0% of your Goal"
-            android:textAlignment="center"
-            android:textSize="16sp" />
+            android:layout_marginTop="25dp"
+            android:padding="16dp">
+
+            <!-- ml-Anzeige oben rechts -->
+            <TextView
+                android:id="@+id/tvMl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="0ml / 0ml"
+                android:textColor="@color/blue_600"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Fortschrittsbalken -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="20dp"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_bar_custom"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvMl" />
+
+            <!-- Text rechts unterhalb der ProgressBar -->
+            <TextView
+                android:id="@+id/tvProgressInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="75% erreicht"
+                android:textColor="@color/blue_600"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/progressBar" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
         <HorizontalScrollView
             android:id="@+id/horizontalScrollView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="150sp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
             android:paddingVertical="16dp"
-            android:scrollbars="none">
+            android:scrollbars="none"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -150,11 +217,12 @@
             </LinearLayout>
         </HorizontalScrollView>
 
-        <Button
-            android:id="@+id/btSettings"
-            android:layout_width="wrap_content"
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:onClick="startSettingsScreen"
-            android:text="Settings" />
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp" />
+
+
     </LinearLayout>
 </ScrollView>

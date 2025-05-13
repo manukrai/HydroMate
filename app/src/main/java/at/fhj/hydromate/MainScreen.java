@@ -1,5 +1,6 @@
 package at.fhj.hydromate;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,6 +11,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
@@ -19,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -52,7 +56,11 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     private TextView tvStepsView;
     private TextView tvTemperatureView;
     private TextView textMili;
-    private TextView textProcent;
+    private ProgressBar progressBar;
+    private TextView tvProgressInfo;
+
+    private EditText etDate;
+
 
     private double dailyIntake;
     private SharedPreferences sp;
@@ -66,37 +74,63 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_screen);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-
-
         sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
         db = Room.databaseBuilder(getApplicationContext(),
-                                HydrationDatabase.class, "hydration-db")
-                                .build();
-
+                        HydrationDatabase.class, "hydration-db")
+                .build();
 
         this.textMili = findViewById(R.id.tvMl);
-        this.textProcent = findViewById(R.id.tvProcent);
         this.tvTemperatureView = findViewById(R.id.tvTemperature);
         this.tvStepsView = findViewById(R.id.tvSteps);
+        this.progressBar = findViewById(R.id.progressBar);
+        this.tvProgressInfo = findViewById(R.id.tvProgressInfo);
+        this.etDate = findViewById(R.id.etDate);
 
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        String todayDate = sdf.format(calendar.getTime());
+        etDate.setText(todayDate);
+
+        etDate.setOnClickListener(v -> {
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePickerDialog = new DatePickerDialog(
+                    MainScreen.this,
+                    (view, selectedYear, selectedMonth, selectedDay) -> {
+                        calendar.set(Calendar.YEAR, selectedYear);
+                        calendar.set(Calendar.MONTH, selectedMonth);
+                        calendar.set(Calendar.DAY_OF_MONTH, selectedDay);
+                        String selectedDate = sdf.format(calendar.getTime());
+                        etDate.setText(selectedDate);
+                        updateHydrationDataForDate(selectedDate);
+                    },
+                    year, month, day
+            );
+
+            datePickerDialog.show();
+        });
 
         if (sp.getInt("weight", 0) == 0 ||
-            sp.getInt("height", 0) == 0 ||
-            sp.getInt("age", 0) == 0 ||
-            sp.getString("gender", "").equals(""))
-        {
+                sp.getInt("height", 0) == 0 ||
+                sp.getInt("age", 0) == 0 ||
+                sp.getString("gender", "").equals("")) {
             textMili.setText("Please change settings!");
-            textProcent.setText("");
         }
 
-        stepCounterManager = new StepCounterManager(this, stepsToday -> {tvStepsView.setText(stepsToday + " Steps");});
+        stepCounterManager = new StepCounterManager(this, stepsToday -> {
+            tvStepsView.setText(stepsToday + " Steps");
+        });
+
         gpsHelper = new GPSHelper(this);
 
         if (!checkActivityPermission()) {
@@ -108,33 +142,45 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             startLocationRequest();
         }
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        dailyIntake = getDailyIntake(
+                sp.getInt("weight", 0),
+                sp.getInt("height", 0),
+                sp.getInt("age", 0),
+                sp.getString("gender", "Male"),
+                0,
+                5000
+        );
 
-        dailyIntake = getDailyIntake(sp.getInt("weight", 0), sp.getInt("height", 0), sp.getInt("age", 0), sp.getString("gender", "Male"), 0, 5000);
-
-        executor.execute(() -> {
-            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-            double volume = db.hydrationDao().getEffectiveHydrationForToday(todayDate);
-
-            // Optional: zurück an UI-Thread
-            new Handler(Looper.getMainLooper()).post(() -> {
-                textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
-                double procent = (volume / dailyIntake) * 100;
-                double roundedProcent = Math.round(procent * 100.0) / 100.0;
-                textProcent.setText(roundedProcent + " % of your Goal");
-            });
-        });
-
+        updateHydrationDataForDate(todayDate);
     }
 
 
-    public void fetchTemperature(double lat , double lon){
+    private void updateHydrationDataForDate(String date) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            double volume = db.hydrationDao().getEffectiveHydrationForToday(date);
+
+            new Handler(Looper.getMainLooper()).post(() -> {
+                textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
+                double procent = (volume / dailyIntake) * 100;
+                int roundedProcent = (int) Math.round(procent);
+                progressBar.setProgress(roundedProcent);
+                tvProgressInfo.setText(roundedProcent + "%");
+            });
+        });
+    }
+
+
+
+
+    public void fetchTemperature(double lat, double lon) {
         new Thread(() -> {
             try {
                 String urlString = String.format(
                         Locale.US,
                         "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric",
-                        lat, lon, this.apiKey
+                        lat, lon, this.apiKey // Stelle sicher, dass apiKey korrekt gesetzt ist
                 );
                 URL url = new URL(urlString);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -152,37 +198,33 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 JSONObject json = new JSONObject(result.toString());
                 double temp = json.getJSONObject("main").getDouble("temp");
 
-                // Zurück auf den UI-Thread
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText(temp + "°C");
-                    if (temp >= 20 && temp <= 25)
-                    {
+
+                    if (temp >= 20 && temp <= 25) {
                         dailyIntake += 200;
-                    }
-                    else if (temp > 25 && temp <= 30)
-                    {
+                    } else if (temp > 25 && temp <= 30) {
                         dailyIntake += 500;
-                    }
-                    else if (temp > 30)
-                    {
+                    } else if (temp > 30) {
                         dailyIntake += 700;
                     }
 
-                    String text = textMili.getText().toString();  // "750 ml / 2000 ml"
-                    String[] parts = text.split(" ");             // ["750", "ml", "/", "2000", "ml"]
+                    String text = textMili.getText().toString();  // z. B. "750 ml / 2000 ml"
+                    String[] parts = text.split(" ");
                     double volume = Double.parseDouble(parts[0]);
 
                     textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
                     double procent = (volume / dailyIntake) * 100;
-                    double roundedProcent = Math.round(procent * 100.0) / 100.0;
-                    textProcent.setText(roundedProcent + " % of your Goal");
+                    int roundedProcent = (int) Math.round(procent);
+                    progressBar.setProgress(roundedProcent);
+                    tvProgressInfo.setText(roundedProcent + "%");
                 });
 
                 conn.disconnect();
             } catch (Exception e) {
                 e.printStackTrace();
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    tvTemperatureView.setText("Fehler beim Laden");
+                    tvTemperatureView.setText("Error");
                 });
             }
         }).start();
@@ -301,7 +343,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         if (drinkType != null) {
             intent.putExtra("drinkType", drinkType);
         }
-
         startActivity(intent);
 
     }
