@@ -1,10 +1,8 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.database;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import java.util.List;
-
-import at.fhj.hydromate.HydrationEntry;
 
 @Dao
 public interface HydrationDao {

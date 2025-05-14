@@ -1,4 +1,4 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.bl;
 
 import android.app.DatePickerDialog;
 import android.content.Context;
@@ -23,7 +23,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -44,6 +43,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.room.Room;
 
 import org.json.JSONObject;
+
+import at.fhj.hydromate.helper.GPSHelper;
+import at.fhj.hydromate.helper.LocationCallback;
+import at.fhj.hydromate.R;
+import at.fhj.hydromate.helper.StepCounterManager;
+import at.fhj.hydromate.database.HydrationDatabase;
 
 
 public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
@@ -68,6 +73,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private final String apiKey = "38127a56fbc2778ac0038588c589242a";
 
+    private String date;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +90,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         });
 
         sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
 
         db = Room.databaseBuilder(getApplicationContext(),
                         HydrationDatabase.class, "hydration-db")
@@ -96,13 +105,19 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
-        String todayDate = sdf.format(calendar.getTime());
-        etDate.setText(todayDate);
+
+        date = sp.getString("date",sdf.format(calendar.getTime()));
+
+
+        etDate.setText(date);
+
 
         etDate.setOnClickListener(v -> {
-            int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
-            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            String[] parts = date.split("-");
+
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1])-1;
+            int day = Integer.parseInt(parts[2]);
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(
                     MainScreen.this,
@@ -111,8 +126,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                         calendar.set(Calendar.MONTH, selectedMonth);
                         calendar.set(Calendar.DAY_OF_MONTH, selectedDay);
                         String selectedDate = sdf.format(calendar.getTime());
+                        editor.putString("date",selectedDate);
                         etDate.setText(selectedDate);
                         updateHydrationDataForDate(selectedDate);
+                        editor.commit();
                     },
                     year, month, day
             );
@@ -151,7 +168,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 5000
         );
 
-        updateHydrationDataForDate(todayDate);
+        updateHydrationDataForDate(date);
+        editor.putString("date",date);
+        editor.commit();
     }
 
 
@@ -170,8 +189,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             });
         });
     }
-
-
 
 
     public void fetchTemperature(double lat, double lon) {
@@ -209,7 +226,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                         dailyIntake += 700;
                     }
 
-                    String text = textMili.getText().toString();  // z. B. "750 ml / 2000 ml"
+                    String text = textMili.getText().toString();
                     String[] parts = text.split(" ");
                     double volume = Double.parseDouble(parts[0]);
 
@@ -259,12 +276,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
-
-
     @Override
     public void onStepsUpdated(int stepsToday) {
         tvStepsView = findViewById(R.id.tvSteps);
-        tvStepsView.setText(stepsToday+"");
+        tvStepsView.setText(stepsToday + " Steps");
     }
 
     private void startStepCounter() {
@@ -311,7 +326,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
-
     private void startLocationRequest() {
         gpsHelper.requestLocation(new LocationCallback() {
             @Override
@@ -320,11 +334,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 String[] parts = location.split(",");
                 double lat = Double.parseDouble(parts[0].trim());
                 double lon = Double.parseDouble(parts[1].trim());
-                fetchTemperature(lat,lon);
+                fetchTemperature(lat, lon);
             }
         });
     }
-
 
 
     public void startDrinkScreen(View view) {
@@ -343,43 +356,40 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         if (drinkType != null) {
             intent.putExtra("drinkType", drinkType);
         }
+
+        intent.putExtra("date",date);
+
         startActivity(intent);
 
     }
 
     public void startSettingsScreen(View view) {
         Intent intent = new Intent(MainScreen.this, SettingScreen.class);
+
         startActivity(intent);
     }
 
-    public double getDailyIntake(int weight, int height,int age, String gender, double temperature, int steps)
-    {
+    public double getDailyIntake(int weight, int height, int age, String gender, double temperature, int steps) {
         double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
         // Alter berücksichtigen
-        if (age >= 65)
-        {
+        if (age >= 65) {
             dailyIntake *= 0.9;
         }
 
         // Aktivitätszuschlag durch Schritte
-        if (steps >= 5000 && steps <= 10000)
-        {
+        if (steps >= 5000 && steps <= 10000) {
             dailyIntake += 300;
-        }
-        else if (steps > 10000)
-        {
+        } else if (steps > 10000) {
             dailyIntake += 500;
         }
 
 
-        if(dailyIntake >= 6000)
-        {
+        if (dailyIntake >= 6000) {
             return 6000;
         }
         return dailyIntake;
     }
-
 
 
 }
