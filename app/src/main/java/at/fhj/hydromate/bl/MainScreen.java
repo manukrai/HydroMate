@@ -75,6 +75,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private String date;
 
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private Calendar calendar = Calendar.getInstance();
+
 
 
     @Override
@@ -103,8 +106,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         this.tvProgressInfo = findViewById(R.id.tvProgressInfo);
         this.etDate = findViewById(R.id.etDate);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        Calendar calendar = Calendar.getInstance();
+        sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        calendar = Calendar.getInstance();
 
         date = sp.getString("date",sdf.format(calendar.getTime()));
 
@@ -137,13 +140,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             datePickerDialog.show();
         });
 
-        if (sp.getInt("weight", 0) == 0 ||
-                sp.getInt("height", 0) == 0 ||
-                sp.getInt("age", 0) == 0 ||
-                sp.getString("gender", "").equals("")) {
-            textMili.setText("Please change settings!");
-        }
-
         stepCounterManager = new StepCounterManager(this, stepsToday -> {
             tvStepsView.setText(stepsToday + " Steps");
         });
@@ -159,16 +155,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             startLocationRequest();
         }
 
-        dailyIntake = getDailyIntake(
-                sp.getInt("weight", 0),
-                sp.getInt("height", 0),
-                sp.getInt("age", 0),
-                sp.getString("gender", "Male"),
-                0,
-                5000
-        );
-
-        updateHydrationDataForDate(date);
+        textMili.setText("Loading...");
+        progressBar.setProgress(0);
+        tvProgressInfo.setText("Loading...");
         editor.putString("date",date);
         editor.commit();
     }
@@ -218,23 +207,16 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText(temp + "°C");
 
-                    if (temp >= 20 && temp <= 25) {
-                        dailyIntake += 200;
-                    } else if (temp > 25 && temp <= 30) {
-                        dailyIntake += 500;
-                    } else if (temp > 30) {
-                        dailyIntake += 700;
-                    }
+                    dailyIntake = getDailyIntake(
+                            sp.getInt("weight", 0),
+                            sp.getInt("height", 0),
+                            sp.getInt("age", 0),
+                            sp.getString("gender", "Male"),
+                            temp,
+                            5000
+                    );
 
-                    String text = textMili.getText().toString();
-                    String[] parts = text.split(" ");
-                    double volume = Double.parseDouble(parts[0]);
-
-                    textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
-                    double procent = (volume / dailyIntake) * 100;
-                    int roundedProcent = (int) Math.round(procent);
-                    progressBar.setProgress(roundedProcent);
-                    tvProgressInfo.setText(roundedProcent + "%");
+                    updateHydrationDataForDate(sp.getString("date",sdf.format(calendar.getTime())));
                 });
 
                 conn.disconnect();
@@ -242,6 +224,14 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 e.printStackTrace();
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText("Error");
+                    dailyIntake = getDailyIntake(
+                            sp.getInt("weight", 0),
+                            sp.getInt("height", 0),
+                            sp.getInt("age", 0),
+                            sp.getString("gender", "Male"),
+                            0,
+                            5000
+                    );
                 });
             }
         }).start();
@@ -369,7 +359,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         startActivity(intent);
     }
 
-    public double getDailyIntake(int weight, int height, int age, String gender, double temperature, int steps) {
+    public double getDailyIntake(int weight, int height, int age, String gender, double temp, int steps) {
         double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
         // Alter berücksichtigen
@@ -388,6 +378,16 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         if (dailyIntake >= 6000) {
             return 6000;
         }
+
+
+        if (temp >= 20 && temp <= 25) {
+            dailyIntake += 200;
+        } else if (temp > 25 && temp <= 30) {
+            dailyIntake += 500;
+        } else if (temp > 30) {
+            dailyIntake += 700;
+        }
+
         return dailyIntake;
     }
 
