@@ -1,6 +1,8 @@
 package at.fhj.hydromate.bl;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -32,12 +34,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.Manifest;
+import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -50,6 +55,7 @@ import org.json.JSONObject;
 
 import at.fhj.hydromate.Adapter.DrinkAdapter;
 import at.fhj.hydromate.beans.HydrationEntry;
+import at.fhj.hydromate.helper.AlarmReceiver;
 import at.fhj.hydromate.helper.GPSHelper;
 import at.fhj.hydromate.helper.LocationCallback;
 import at.fhj.hydromate.R;
@@ -85,7 +91,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     private Calendar calendar = Calendar.getInstance();
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,17 +120,17 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         calendar = Calendar.getInstance();
 
-        date = sp.getString("date",sdf.format(calendar.getTime()));
+        date = sp.getString("date", sdf.format(calendar.getTime()));
 
 
         etDate.setText(date);
 
 
         etDate.setOnClickListener(v -> {
-            String[] parts = sp.getString("date",sdf.format(calendar.getTime())).split("-");
+            String[] parts = sp.getString("date", sdf.format(calendar.getTime())).split("-");
 
             int year = Integer.parseInt(parts[0]);
-            int month = Integer.parseInt(parts[1])-1;
+            int month = Integer.parseInt(parts[1]) - 1;
             int day = Integer.parseInt(parts[2]);
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(
@@ -135,7 +140,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                         calendar.set(Calendar.MONTH, selectedMonth);
                         calendar.set(Calendar.DAY_OF_MONTH, selectedDay);
                         String selectedDate = sdf.format(calendar.getTime());
-                        editor.putString("date",selectedDate);
+                        editor.putString("date", selectedDate);
                         etDate.setText(selectedDate);
                         updateHydrationDataForDate(selectedDate);
                         editor.commit();
@@ -164,9 +169,26 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         textMili.setText("Loading...");
         progressBar.setProgress(0);
         tvProgressInfo.setText("Loading...");
-        editor.putString("date",date);
+        editor.putString("date", date);
         editor.commit();
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        1001);
+            }
+        }
+
+        setTrinkErinnerungAlarm(this, 9, 0);
+        setTrinkErinnerungAlarm(this, 12, 0);
+        setTrinkErinnerungAlarm(this, 15, 0);
+        setTrinkErinnerungAlarm(this, 19, 0);
+
+        findViewById(R.id.btNotification).setOnClickListener(v -> {
+            new AlarmReceiver().onReceive(this, new Intent());
+        });
 
     }
 
@@ -178,6 +200,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             double volume = db.hydrationDao().getEffectiveHydrationForToday(date);
 
             new Handler(Looper.getMainLooper()).post(() -> {
+
                 textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
                 double procent = (volume / dailyIntake) * 100;
                 int roundedProcent = (int) Math.round(procent);
@@ -188,8 +211,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         });
     }
 
-    private void updateList(String date)
-    {
+    private void updateList(String date) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -243,8 +265,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                             5000
                     );
 
-                    updateHydrationDataForDate(sp.getString("date",sdf.format(calendar.getTime())));
-                    updateList(sp.getString("date",sdf.format(calendar.getTime())));
+                    updateHydrationDataForDate(sp.getString("date", sdf.format(calendar.getTime())));
+                    updateList(sp.getString("date", sdf.format(calendar.getTime())));
                 });
 
                 conn.disconnect();
@@ -368,17 +390,30 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         drinkMap.put(R.id.btTea, "tea");
         drinkMap.put(R.id.btMilk, "milk");
         drinkMap.put(R.id.btBeer, "beer");
-        drinkMap.put(R.id.btStrongAlcohol, "strongAlcohol");
+        drinkMap.put(R.id.btStrongAlcohol, "liquor");
 
         String drinkType = drinkMap.get(view.getId());
         if (drinkType != null) {
             intent.putExtra("drinkType", drinkType);
         }
 
-        intent.putExtra("date",date);
+        intent.putExtra("date", date);
 
         startActivity(intent);
 
+    }
+
+    public void deleteItem(View view) {
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            db.hydrationDao().deleteById(view.getId());
+
+            runOnUiThread(() -> {
+                String date = sp.getString("date", sdf.format(calendar.getTime()));
+                updateHydrationDataForDate(date);
+                updateList(date);
+            });
+        });
     }
 
     public void startSettingsScreen(View view) {
@@ -416,8 +451,37 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             dailyIntake += 700;
         }
 
+        if (height > 180) {
+            dailyIntake += 100;
+        }
+
         return dailyIntake;
     }
 
+
+    public void setTrinkErinnerungAlarm(Context context, int hour, int minute) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+
+        // Wenn die Zeit heute schon vorbei ist, auf morgen verschieben
+        if (calendar.before(Calendar.getInstance())) {
+            calendar.add(Calendar.DATE, 1);
+        }
+
+        // Wiederholender Alarm (täglich)
+        alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+        );
+    }
 
 }

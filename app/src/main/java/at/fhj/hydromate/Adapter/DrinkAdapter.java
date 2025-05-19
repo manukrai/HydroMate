@@ -3,6 +3,7 @@ package at.fhj.hydromate.Adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -64,6 +65,8 @@ public class DrinkAdapter extends RecyclerView.Adapter<DrinkAdapter.DrinkViewHol
                 break;
         }
 
+        holder.btDelete.setId(drink.getId());
+
     }
 
     @Override
@@ -75,11 +78,14 @@ public class DrinkAdapter extends RecyclerView.Adapter<DrinkAdapter.DrinkViewHol
         TextView drinkType, drinkVolume;
         ImageView drinkIcon;
 
+        Button btDelete;
+
         public DrinkViewHolder(@NonNull View itemView) {
             super(itemView);
             drinkType = itemView.findViewById(R.id.drink_type);
             drinkVolume = itemView.findViewById(R.id.drink_volume);
             drinkIcon = itemView.findViewById(R.id.drink_icon);
+            btDelete = itemView.findViewById(R.id.delete_button);
         }
     }
 }

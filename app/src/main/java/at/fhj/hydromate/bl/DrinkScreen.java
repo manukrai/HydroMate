@@ -54,42 +54,36 @@ public class DrinkScreen extends AppCompatActivity {
 
         ImageView imageView = findViewById(R.id.ivIcon);
 
-        switch (intent.getStringExtra("drinkType")) {
+        drinkType = intent.getStringExtra("drinkType");
+
+        switch (drinkType) {
             case "water":
                 imageView.setImageResource(R.drawable.water_bottle256);
                 drinkProcent = 1.00;
-                drinkType = "water";
                 break;
             case "coffee":
                 imageView.setImageResource(R.drawable.coffee_cup256);
                 drinkProcent = 0.95;
-                drinkType = "coffee";
                 break;
             case "juice":
                 imageView.setImageResource(R.drawable.juice256);
                 drinkProcent = 0.90;
-                drinkType = "juice";
                 break;
             case "tea":
                 imageView.setImageResource(R.drawable.tea256);
                 drinkProcent = 1.00;
-                drinkType = "tea";
                 break;
             case "milk":
                 imageView.setImageResource(R.drawable.milk256);
                 drinkProcent = 1.15;
-                drinkType = "milk";
                 break;
             case "beer":
                 imageView.setImageResource(R.drawable.beer256);
                 drinkProcent = 0.80;
-                ;
-                drinkType = "beer";
                 break;
-            case "strongAlcohol":
+            case "liquor":
                 imageView.setImageResource(R.drawable.liquor256);
                 drinkProcent = 0.50;
-                drinkType = "liquor";
                 break;
         }
 

@@ -49,6 +49,16 @@
                 android:layout_weight="1" />
 
             <ImageButton
+                android:id="@+id/btNotification"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/baseline_access_time_24"
+                app:tint="@color/blue_600" />
+
+            <ImageButton
                 android:id="@+id/btSettings"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
@@ -227,7 +237,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="380dp"
                 android:padding="16dp" />
         </LinearLayout>
 
