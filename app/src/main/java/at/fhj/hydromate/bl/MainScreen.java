@@ -24,8 +24,10 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,10 +42,14 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import org.json.JSONObject;
 
+import at.fhj.hydromate.Adapter.DrinkAdapter;
+import at.fhj.hydromate.beans.HydrationEntry;
 import at.fhj.hydromate.helper.GPSHelper;
 import at.fhj.hydromate.helper.LocationCallback;
 import at.fhj.hydromate.R;
@@ -116,7 +122,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
 
         etDate.setOnClickListener(v -> {
-            String[] parts = date.split("-");
+            String[] parts = sp.getString("date",sdf.format(calendar.getTime())).split("-");
 
             int year = Integer.parseInt(parts[0]);
             int month = Integer.parseInt(parts[1])-1;
@@ -160,6 +166,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         tvProgressInfo.setText("Loading...");
         editor.putString("date",date);
         editor.commit();
+
+
     }
 
 
@@ -175,6 +183,25 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 int roundedProcent = (int) Math.round(procent);
                 progressBar.setProgress(roundedProcent);
                 tvProgressInfo.setText(roundedProcent + "%");
+                updateList(date);
+            });
+        });
+    }
+
+    private void updateList(String date)
+    {
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+
+        Executor executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            List<HydrationEntry> entries = db.hydrationDao().getEntriesForDate(date);
+
+            runOnUiThread(() -> {
+                DrinkAdapter adapter = new DrinkAdapter(entries);
+                recyclerView.setAdapter(adapter);
             });
         });
     }
@@ -217,6 +244,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                     );
 
                     updateHydrationDataForDate(sp.getString("date",sdf.format(calendar.getTime())));
+                    updateList(sp.getString("date",sdf.format(calendar.getTime())));
                 });
 
                 conn.disconnect();

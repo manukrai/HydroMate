@@ -4,6 +4,8 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import java.util.List;
 
+import at.fhj.hydromate.beans.HydrationEntry;
+
 @Dao
 public interface HydrationDao {
     @Insert
@@ -11,6 +13,9 @@ public interface HydrationDao {
 
     @Query("SELECT * FROM HydrationEntry ORDER BY date DESC")
     List<HydrationEntry> getAllEntries();
+
+    @Query("SELECT * FROM HydrationEntry WHERE date = :targetDate ORDER BY date DESC")
+    List<HydrationEntry> getEntriesForDate(String targetDate);
 
     @Query("SELECT SUM(volume) FROM HydrationEntry WHERE date = :todayDate")
     int getTotalVolumeForToday(String todayDate);

@@ -17,12 +17,11 @@ import androidx.room.Room;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 
 import at.fhj.hydromate.R;
 import at.fhj.hydromate.database.HydrationDatabase;
-import at.fhj.hydromate.database.HydrationEntry;
+import at.fhj.hydromate.beans.HydrationEntry;
 
 public class DrinkScreen extends AppCompatActivity {
 
