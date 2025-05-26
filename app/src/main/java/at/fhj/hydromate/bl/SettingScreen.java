@@ -1,24 +1,21 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.bl;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import at.fhj.hydromate.R;
 
 public class SettingScreen extends AppCompatActivity {
 
@@ -41,18 +38,18 @@ public class SettingScreen extends AppCompatActivity {
             return insets;
         });
 
-        sp = getApplicationContext().getSharedPreferences("UserPrefs",Context.MODE_PRIVATE);
+        sp = getApplicationContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
         etWeight = findViewById(R.id.etWeight);
         etHeight = findViewById(R.id.etHeight);
         etAge = findViewById(R.id.etAge);
         rgGender = findViewById(R.id.rbGroupGender);
 
-        etWeight.setText(sp.getInt("weight",0)+"");
-        etHeight.setText(sp.getInt("height",0)+"");
-        etAge.setText(sp.getInt("age",0)+"");
+        etWeight.setText(sp.getInt("weight", 0) + "");
+        etHeight.setText(sp.getInt("height", 0) + "");
+        etAge.setText(sp.getInt("age", 0) + "");
 
-        String gender = sp.getString("gender","Male");
+        String gender = sp.getString("gender", "Male");
 
         for (int i = 0; i < rgGender.getChildCount(); i++) {
             View child = rgGender.getChildAt(i);
@@ -64,9 +61,7 @@ public class SettingScreen extends AppCompatActivity {
                 }
             }
         }
-
     }
-
 
 
     public void startMainScreen(View view) {
@@ -74,14 +69,14 @@ public class SettingScreen extends AppCompatActivity {
 
         SharedPreferences.Editor editor = sp.edit();
 
-        editor.putInt("weight",Integer.parseInt(etWeight.getText().toString()));
-        editor.putInt("height",Integer.parseInt(etHeight.getText().toString()));
-        editor.putInt("age",Integer.parseInt(etAge.getText().toString()));
+        editor.putInt("weight", Integer.parseInt(etWeight.getText().toString()));
+        editor.putInt("height", Integer.parseInt(etHeight.getText().toString()));
+        editor.putInt("age", Integer.parseInt(etAge.getText().toString()));
 
         int selectedId = rgGender.getCheckedRadioButtonId();
         RadioButton selectedButton = (RadioButton) findViewById(selectedId);
 
-        editor.putString("gender",selectedButton.getText().toString());
+        editor.putString("gender", selectedButton.getText().toString());
 
         editor.commit();
 

@@ -1,8 +1,9 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.bl;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,8 +16,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.room.Room;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.Locale;
+
+import at.fhj.hydromate.R;
+import at.fhj.hydromate.database.HydrationDatabase;
+import at.fhj.hydromate.beans.HydrationEntry;
 
 public class DrinkScreen extends AppCompatActivity {
 
@@ -25,14 +30,14 @@ public class DrinkScreen extends AppCompatActivity {
 
     private HydrationDatabase db;
 
-
+    private SharedPreferences sp;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = Room.databaseBuilder(getApplicationContext(),
-                HydrationDatabase.class, "hydration-db")
+                        HydrationDatabase.class, "hydration-db")
                 .allowMainThreadQueries()
                 .build();
         EdgeToEdge.enable(this);
@@ -45,39 +50,40 @@ public class DrinkScreen extends AppCompatActivity {
 
         Intent intent = getIntent();
 
-
+        sp = getApplicationContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
         ImageView imageView = findViewById(R.id.ivIcon);
 
-        switch(intent.getStringExtra("drinkType"))
-        {
-            case "water":imageView.setImageResource(R.drawable.water_bottle256);
+        drinkType = intent.getStringExtra("drinkType");
+
+        switch (drinkType) {
+            case "water":
+                imageView.setImageResource(R.drawable.water_bottle256);
                 drinkProcent = 1.00;
-                drinkType = "water";
                 break;
-            case "coffee":imageView.setImageResource(R.drawable.coffee_cup256);
+            case "coffee":
+                imageView.setImageResource(R.drawable.coffee_cup256);
                 drinkProcent = 0.95;
-                drinkType = "coffee";
                 break;
-            case "juice":imageView.setImageResource(R.drawable.juice256);
+            case "juice":
+                imageView.setImageResource(R.drawable.juice256);
                 drinkProcent = 0.90;
-                drinkType = "juice";
                 break;
-            case "tea":imageView.setImageResource(R.drawable.tea256);
+            case "tea":
+                imageView.setImageResource(R.drawable.tea256);
                 drinkProcent = 1.00;
-                drinkType = "tea";
                 break;
-            case "milk":imageView.setImageResource(R.drawable.milk256);
+            case "milk":
+                imageView.setImageResource(R.drawable.milk256);
                 drinkProcent = 1.15;
-                drinkType = "milk";
                 break;
-            case "beer":imageView.setImageResource(R.drawable.beer256);
-                drinkProcent = 0.80;;
-                drinkType = "beer";
+            case "beer":
+                imageView.setImageResource(R.drawable.beer256);
+                drinkProcent = 0.80;
                 break;
-            case "strongAlcohol":imageView.setImageResource(R.drawable.liquor256);
+            case "liquor":
+                imageView.setImageResource(R.drawable.liquor256);
                 drinkProcent = 0.50;
-                drinkType = "liquor";
                 break;
         }
 
@@ -88,42 +94,36 @@ public class DrinkScreen extends AppCompatActivity {
 
         int volume = 0;
 
-
-        if(view.getId() == R.id.btSave)
-        {
-
+        if (view.getId() == R.id.btSave) {
             EditText etVolumeText = findViewById(R.id.etVolume);
 
-            if(etVolumeText.getText().toString().equals(""))
-            {
+            if (!etVolumeText.getText().toString().equals("")) {
                 volume = Integer.parseInt(etVolumeText.getText().toString());
             }
-            else
-            {
-                intent.putExtra("volume",0);
-            }
-
         }
-        if(view.getId() == R.id.btAdd150)
-        {
+        if (view.getId() == R.id.btAdd150) {
             volume = 150;
         }
-        if(view.getId() == R.id.btAdd250)
-        {
+        if (view.getId() == R.id.btAdd250) {
             volume = 250;
         }
-        if(view.getId() == R.id.btadd500)
-        {
+        if (view.getId() == R.id.btadd500) {
             volume = 500;
         }
 
+        addDrink(volume);
+
+        startActivity(intent);
+    }
+
+    public void addDrink(int volume) {
         HydrationEntry entry = new HydrationEntry();
         entry.volume = volume;
         entry.procent = drinkProcent;
-        entry.date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        entry.date = sp.getString("date",sdf.format(calendar.getTime()));
         entry.drinkType = drinkType;
         db.hydrationDao().insert(entry);
-
-        startActivity(intent);
     }
 }

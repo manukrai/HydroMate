@@ -1,4 +1,4 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.helper;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -6,7 +6,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

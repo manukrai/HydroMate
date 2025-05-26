@@ -1,4 +1,4 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.helper;
 
 import android.Manifest;
 import android.app.Activity;

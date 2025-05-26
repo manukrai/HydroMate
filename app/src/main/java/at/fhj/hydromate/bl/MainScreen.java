@@ -1,6 +1,8 @@
-package at.fhj.hydromate;
+package at.fhj.hydromate.bl;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,27 +25,42 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.Manifest;
+import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import org.json.JSONObject;
+
+import at.fhj.hydromate.Adapter.DrinkAdapter;
+import at.fhj.hydromate.beans.HydrationEntry;
+import at.fhj.hydromate.helper.AlarmReceiver;
+import at.fhj.hydromate.helper.GPSHelper;
+import at.fhj.hydromate.helper.LocationCallback;
+import at.fhj.hydromate.R;
+import at.fhj.hydromate.helper.StepCounterManager;
+import at.fhj.hydromate.database.HydrationDatabase;
 
 
 public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
@@ -68,6 +85,11 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private final String apiKey = "38127a56fbc2778ac0038588c589242a";
 
+    private String date;
+
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private Calendar calendar = Calendar.getInstance();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +104,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         });
 
         sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
 
         db = Room.databaseBuilder(getApplicationContext(),
                         HydrationDatabase.class, "hydration-db")
@@ -94,15 +117,21 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         this.tvProgressInfo = findViewById(R.id.tvProgressInfo);
         this.etDate = findViewById(R.id.etDate);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        Calendar calendar = Calendar.getInstance();
-        String todayDate = sdf.format(calendar.getTime());
-        etDate.setText(todayDate);
+        sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        calendar = Calendar.getInstance();
+
+        date = sp.getString("date", sdf.format(calendar.getTime()));
+
+
+        etDate.setText(date);
+
 
         etDate.setOnClickListener(v -> {
-            int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
-            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            String[] parts = sp.getString("date", sdf.format(calendar.getTime())).split("-");
+
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]) - 1;
+            int day = Integer.parseInt(parts[2]);
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(
                     MainScreen.this,
@@ -111,21 +140,16 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                         calendar.set(Calendar.MONTH, selectedMonth);
                         calendar.set(Calendar.DAY_OF_MONTH, selectedDay);
                         String selectedDate = sdf.format(calendar.getTime());
+                        editor.putString("date", selectedDate);
                         etDate.setText(selectedDate);
                         updateHydrationDataForDate(selectedDate);
+                        editor.commit();
                     },
                     year, month, day
             );
 
             datePickerDialog.show();
         });
-
-        if (sp.getInt("weight", 0) == 0 ||
-                sp.getInt("height", 0) == 0 ||
-                sp.getInt("age", 0) == 0 ||
-                sp.getString("gender", "").equals("")) {
-            textMili.setText("Please change settings!");
-        }
 
         stepCounterManager = new StepCounterManager(this, stepsToday -> {
             tvStepsView.setText(stepsToday + " Steps");
@@ -142,16 +166,30 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             startLocationRequest();
         }
 
-        dailyIntake = getDailyIntake(
-                sp.getInt("weight", 0),
-                sp.getInt("height", 0),
-                sp.getInt("age", 0),
-                sp.getString("gender", "Male"),
-                0,
-                5000
-        );
+        textMili.setText("Loading...");
+        progressBar.setProgress(0);
+        tvProgressInfo.setText("Loading...");
+        editor.putString("date", date);
+        editor.commit();
 
-        updateHydrationDataForDate(todayDate);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        1001);
+            }
+        }
+
+        setTrinkErinnerungAlarm(this, 9, 0);
+        setTrinkErinnerungAlarm(this, 12, 0);
+        setTrinkErinnerungAlarm(this, 15, 0);
+        setTrinkErinnerungAlarm(this, 19, 0);
+
+        findViewById(R.id.btNotification).setOnClickListener(v -> {
+            new AlarmReceiver().onReceive(this, new Intent());
+        });
+
     }
 
 
@@ -162,16 +200,33 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
             double volume = db.hydrationDao().getEffectiveHydrationForToday(date);
 
             new Handler(Looper.getMainLooper()).post(() -> {
+
                 textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
                 double procent = (volume / dailyIntake) * 100;
                 int roundedProcent = (int) Math.round(procent);
                 progressBar.setProgress(roundedProcent);
                 tvProgressInfo.setText(roundedProcent + "%");
+                updateList(date);
             });
         });
     }
 
+    private void updateList(String date) {
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+
+        Executor executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            List<HydrationEntry> entries = db.hydrationDao().getEntriesForDate(date);
+
+            runOnUiThread(() -> {
+                DrinkAdapter adapter = new DrinkAdapter(entries);
+                recyclerView.setAdapter(adapter);
+            });
+        });
+    }
 
 
     public void fetchTemperature(double lat, double lon) {
@@ -201,23 +256,17 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText(temp + "°C");
 
-                    if (temp >= 20 && temp <= 25) {
-                        dailyIntake += 200;
-                    } else if (temp > 25 && temp <= 30) {
-                        dailyIntake += 500;
-                    } else if (temp > 30) {
-                        dailyIntake += 700;
-                    }
+                    dailyIntake = getDailyIntake(
+                            sp.getInt("weight", 0),
+                            sp.getInt("height", 0),
+                            sp.getInt("age", 0),
+                            sp.getString("gender", "Male"),
+                            temp,
+                            5000
+                    );
 
-                    String text = textMili.getText().toString();  // z. B. "750 ml / 2000 ml"
-                    String[] parts = text.split(" ");
-                    double volume = Double.parseDouble(parts[0]);
-
-                    textMili.setText(volume + " ml / " + (int) dailyIntake + " ml");
-                    double procent = (volume / dailyIntake) * 100;
-                    int roundedProcent = (int) Math.round(procent);
-                    progressBar.setProgress(roundedProcent);
-                    tvProgressInfo.setText(roundedProcent + "%");
+                    updateHydrationDataForDate(sp.getString("date", sdf.format(calendar.getTime())));
+                    updateList(sp.getString("date", sdf.format(calendar.getTime())));
                 });
 
                 conn.disconnect();
@@ -225,6 +274,14 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 e.printStackTrace();
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText("Error");
+                    dailyIntake = getDailyIntake(
+                            sp.getInt("weight", 0),
+                            sp.getInt("height", 0),
+                            sp.getInt("age", 0),
+                            sp.getString("gender", "Male"),
+                            0,
+                            5000
+                    );
                 });
             }
         }).start();
@@ -259,12 +316,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
-
-
     @Override
     public void onStepsUpdated(int stepsToday) {
         tvStepsView = findViewById(R.id.tvSteps);
-        tvStepsView.setText(stepsToday+"");
+        tvStepsView.setText(stepsToday + " Steps");
     }
 
     private void startStepCounter() {
@@ -311,7 +366,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
-
     private void startLocationRequest() {
         gpsHelper.requestLocation(new LocationCallback() {
             @Override
@@ -320,11 +374,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 String[] parts = location.split(",");
                 double lat = Double.parseDouble(parts[0].trim());
                 double lon = Double.parseDouble(parts[1].trim());
-                fetchTemperature(lat,lon);
+                fetchTemperature(lat, lon);
             }
         });
     }
-
 
 
     public void startDrinkScreen(View view) {
@@ -337,49 +390,98 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         drinkMap.put(R.id.btTea, "tea");
         drinkMap.put(R.id.btMilk, "milk");
         drinkMap.put(R.id.btBeer, "beer");
-        drinkMap.put(R.id.btStrongAlcohol, "strongAlcohol");
+        drinkMap.put(R.id.btStrongAlcohol, "liquor");
 
         String drinkType = drinkMap.get(view.getId());
         if (drinkType != null) {
             intent.putExtra("drinkType", drinkType);
         }
+
+        intent.putExtra("date", date);
+
         startActivity(intent);
 
+    }
+
+    public void deleteItem(View view) {
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            db.hydrationDao().deleteById(view.getId());
+
+            runOnUiThread(() -> {
+                String date = sp.getString("date", sdf.format(calendar.getTime()));
+                updateHydrationDataForDate(date);
+                updateList(date);
+            });
+        });
     }
 
     public void startSettingsScreen(View view) {
         Intent intent = new Intent(MainScreen.this, SettingScreen.class);
+
         startActivity(intent);
     }
 
-    public double getDailyIntake(int weight, int height,int age, String gender, double temperature, int steps)
-    {
+    public double getDailyIntake(int weight, int height, int age, String gender, double temp, int steps) {
         double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
         // Alter berücksichtigen
-        if (age >= 65)
-        {
+        if (age >= 65) {
             dailyIntake *= 0.9;
         }
 
         // Aktivitätszuschlag durch Schritte
-        if (steps >= 5000 && steps <= 10000)
-        {
+        if (steps >= 5000 && steps <= 10000) {
             dailyIntake += 300;
-        }
-        else if (steps > 10000)
-        {
+        } else if (steps > 10000) {
             dailyIntake += 500;
         }
 
 
-        if(dailyIntake >= 6000)
-        {
+        if (dailyIntake >= 6000) {
             return 6000;
         }
+
+
+        if (temp >= 20 && temp <= 25) {
+            dailyIntake += 200;
+        } else if (temp > 25 && temp <= 30) {
+            dailyIntake += 500;
+        } else if (temp > 30) {
+            dailyIntake += 700;
+        }
+
+        if (height > 180) {
+            dailyIntake += 100;
+        }
+
         return dailyIntake;
     }
 
 
+    public void setTrinkErinnerungAlarm(Context context, int hour, int minute) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+
+        // Wenn die Zeit heute schon vorbei ist, auf morgen verschieben
+        if (calendar.before(Calendar.getInstance())) {
+            calendar.add(Calendar.DATE, 1);
+        }
+
+        // Wiederholender Alarm (täglich)
+        alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+        );
+    }
 
 }
