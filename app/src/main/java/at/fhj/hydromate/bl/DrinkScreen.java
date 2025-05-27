@@ -23,16 +23,40 @@ import at.fhj.hydromate.R;
 import at.fhj.hydromate.database.HydrationDatabase;
 import at.fhj.hydromate.beans.HydrationEntry;
 
+/**
+ * Activity zur Eingabe und Speicherung eines neuen Trinkeintrags
+ * Benutzer können die Getränkemenge wählen uns speichern
+ */
 public class DrinkScreen extends AppCompatActivity {
 
+    /**
+     * Prozentuale Flüssigkeitsverwertbarkeit des gewählten Getränks
+     */
     private double drinkProcent = 0.00;
+    /**
+     * Der ausgewählte Getränketyp
+     */
     private String drinkType;
 
+    /**
+     * Instanz der Room-Datenbank für Trinkeinträge
+     */
     private HydrationDatabase db;
 
+    /**
+     * SharedPreferences zur Speicherung des aktuellen Datums
+     */
     private SharedPreferences sp;
 
 
+    /**
+     * Lifecycle-Methode beim Start der Activity
+     * Initialisiert Layout, Datenbank und UI
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,6 +113,11 @@ public class DrinkScreen extends AppCompatActivity {
 
     }
 
+    /**
+     * Wird aufgerufen, wenn ein Button geklickt wird
+     * Erstellt einen neuen Trinkeintrag und startet die Hauptansicht
+     * @param view die gedrückte View
+     */
     public void startMainScreen(View view) {
         Intent intent = new Intent(DrinkScreen.this, MainScreen.class);
 
@@ -116,6 +145,10 @@ public class DrinkScreen extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Fügt einen neuen {@link HydrationEntry} mit dem angegebenen Volumen in die Datenbank ein
+     * @param volume Volumen des Getränks in ml
+     */
     public void addDrink(int volume) {
         HydrationEntry entry = new HydrationEntry();
         entry.volume = volume;

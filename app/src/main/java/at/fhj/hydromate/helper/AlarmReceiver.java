@@ -15,7 +15,29 @@ import androidx.core.content.ContextCompat;
 
 import at.fhj.hydromate.R;
 
+/**
+ * {@code AlarmReceiver} ist ein {@link BroadcastReceiver}, der bei einem Alarm ausgelöst wird
+ * und eine Benachrichtigung zur Erinnerung ans Trinken anzeigt.
+ *
+ * <p>Diese Klasse erstellt bei Bedarf einen {@link NotificationChannel} (ab Android O)
+ * und zeigt dann eine Benachrichtigung mit hoher Priorität an.</p>
+ *
+ * <p>Auf neueren Android-Versionen (ab Android 13 / TIRAMISU) wird geprüft, ob die Berechtigung
+ * {@code POST_NOTIFICATIONS} vorhanden ist, bevor die Benachrichtigung angezeigt wird.</p>
+ *
+ * <p>Wird z. B. in Kombination mit einem {@link android.app.AlarmManager} oder
+ * {@link android.app.PendingIntent} verwendet, um regelmäßige Erinnerungen zu senden.</p>
+ *
+ * Beispieltext: „Zeit, etwas Wasser zu trinken!“
+ */
 public class AlarmReceiver extends BroadcastReceiver {
+
+    /**
+     * Wird aufgerufen, wenn der Alarm ausgelöst wird.
+     *
+     * @param context Der Kontext, in dem der Receiver läuft.
+     * @param intent  Der empfangene Intent, der den Alarm repräsentiert.
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

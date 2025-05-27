@@ -17,16 +17,43 @@ import androidx.core.view.WindowInsetsCompat;
 
 import at.fhj.hydromate.R;
 
+/**
+ * Die SettingScreen-Klasse stellt eine Benutzeroberfläche bereit, auf der Nutzer ihre persönlichen Informationen eingeben können
+ * Diese Daten werden in den SharedPreferences gespeichert und beim Starten des MainScreens verwendet
+ */
 public class SettingScreen extends AppCompatActivity {
 
+    /**
+     * Referenz auf die SharedPreferences zur Speicherung der Benutzerdaten
+     */
     private SharedPreferences sp;
 
+    /**
+     * EditText-Feld für das Gewicht des Benutzers
+     */
     private EditText etWeight;
+    /**
+     * EditText-Feld für die Körpergröße des Benutzers
+     */
     private EditText etHeight;
+    /**
+     * EditText-Feld für das Alter des Benutzers
+     */
     private EditText etAge;
+    /**
+     * RadioGroup zur Auswahl des Geschlechts
+     */
     private RadioGroup rgGender;
 
 
+    /**
+     * Wird beim Erstellen der Aktivität aufgerufen. Initialisiert die UI-Elemente
+     * und lädt gespeicherte Werte aus den SharedPreferences, um sie im UI anzuzeigen
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +91,12 @@ public class SettingScreen extends AppCompatActivity {
     }
 
 
+    /**
+     * Wird aufgerufen, wenn Nutzer auf den Bestätiogungs-Button klickt
+     * Speichert alle eingegebenen Werte (Gewicht, Größe, Alter, Geschlecht) in den SharedPreferences
+     * und startet anschließend die Hauptansicht(MainScreen
+     * @param view das akutelle  View-Element (Button), das dieses Ereignis ausgelöst hat
+     */
     public void startMainScreen(View view) {
         Intent intent = new Intent(SettingScreen.this, MainScreen.class);
 

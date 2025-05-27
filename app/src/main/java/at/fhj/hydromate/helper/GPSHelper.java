@@ -15,16 +15,51 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.location.LocationRequest;
 
+/**
+ * Die Klasse {@code GPSHelper} vereinfacht den Zugriff auf den aktuellen Standort eines Geräts.
+ * <p>
+ * Sie nutzt den {@link FusedLocationProviderClient} von Google Play Services, um eine genaue
+ * oder energieeffiziente Standortbestimmung basierend auf vorhandenen Berechtigungen zu ermöglichen.
+ * </p>
+ * <p>
+ * Die Standortdaten werden asynchron angefordert und über einen benutzerdefinierten
+ * {@link LocationCallback} zurückgegeben.
+ * </p>
+ *
+ * <h2>Voraussetzungen</h2>
+ * <ul>
+ *     <li>Berechtigungen: {@link Manifest.permission#ACCESS_FINE_LOCATION} oder {@link Manifest.permission#ACCESS_COARSE_LOCATION}</li>
+ *     <li>Google Play Services müssen verfügbar sein</li>
+ * </ul>
+ *
+ * Beispielverwendung:
+ * <pre>{@code
+ * new GPSHelper(this).requestLocation(location -> {
+ *     Log.d("Standort", location);
+ * });
+ * }</pre>
+ */
 public class GPSHelper {
 
     private final Activity activity;
     private final FusedLocationProviderClient fusedLocationClient;
 
+    /**
+     * Konstruktor für die Klasse {@code GPSHelper}.
+     *
+     * @param activity Die Aktivität, aus der heraus der Standort angefordert wird.
+     */
     public GPSHelper(Activity activity) {
         this.activity = activity;
         this.fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity);
     }
 
+    /**
+     * Fordert den aktuellen Standort an. Falls keine Standortberechtigungen vorhanden sind,
+     * werden diese beim Nutzer angefragt.
+     *
+     * @param callback Callback-Schnittstelle, die beim Eintreffen des Standorts aufgerufen wird.
+     */
     public void requestLocation(LocationCallback callback) {
         boolean hasFine = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         boolean hasCoarse = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;

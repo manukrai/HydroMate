@@ -11,6 +11,23 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Die Klasse {@code StepCounterManager} verwaltet die Schrittzählung mithilfe
+ * von Android-Sensoren wie {@link Sensor#TYPE_STEP_COUNTER} und
+ * {@link Sensor#TYPE_STEP_DETECTOR}.
+ *
+ * <p>
+ * Sie verfolgt die täglichen Schritte, speichert die relevanten Werte in
+ * {@link SharedPreferences} und benachrichtigt einen {@link StepUpdateListener},
+ * sobald sich die Schrittzahl ändert.
+ * </p>
+ *
+ * <p>
+ * Die Klasse behandelt automatisch Tageswechsel, indem sie beim Start überprüft,
+ * ob ein neuer Tag begonnen hat, und gegebenenfalls die gespeicherten Werte zurücksetzt.
+ * </p>
+ */
+
 public class StepCounterManager implements SensorEventListener {
 
     private final SensorManager sensorManager;
@@ -24,10 +41,24 @@ public class StepCounterManager implements SensorEventListener {
     private int stepsAtStart = 0;
     private int stepsFromDetector = 0;
 
+    /**
+     * Interface zur Benachrichtigung über Schrittaktualisierungen.
+     */
     public interface StepUpdateListener {
+        /**
+         * Wird aufgerufen, wenn sich die tägliche Schrittzahl ändert.
+         *
+         * @param stepsToday aktuelle Anzahl der heute zurückgelegten Schritte.
+         */
         void onStepsUpdated(int stepsToday);
     }
 
+    /**
+     * Konstruktor zum Erstellen eines neuen {@code StepCounterManager}.
+     *
+     * @param context  der Anwendungskontext.
+     * @param listener ein Callback zur Aktualisierung der Schritte.
+     */
     public StepCounterManager(Context context, StepUpdateListener listener) {
         this.context = context;
         this.listener = listener;
@@ -41,6 +72,9 @@ public class StepCounterManager implements SensorEventListener {
         stepsFromDetector = prefs.getInt("stepsFromDetector", 0);
     }
 
+    /**
+     * Startet die Sensorüberwachung für Schrittzähler oder Schritt-Detektor.
+     */
     public void start() {
         if (stepCounterSensor != null) {
             sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_UI);
@@ -49,6 +83,9 @@ public class StepCounterManager implements SensorEventListener {
         }
     }
 
+    /**
+     * Überprüft, ob ein neuer Tag begonnen hat, und setzt bei Bedarf die Zählerwerte zurück.
+     */
     private void checkNewDay() {
         String today = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
         String savedDate = prefs.getString("date", "");
@@ -63,6 +100,11 @@ public class StepCounterManager implements SensorEventListener {
         }
     }
 
+    /**
+     * Wird aufgerufen, wenn sich die Sensorwerte ändern.
+     *
+     * @param event das {@link SensorEvent}, das die Sensordaten enthält.
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
@@ -87,10 +129,22 @@ public class StepCounterManager implements SensorEventListener {
         }
     }
 
+    /**
+     * Wird aufgerufen, wenn sich die Genauigkeit des Sensors ändert.
+     * Diese Implementierung ignoriert Genauigkeitsänderungen.
+     *
+     * @param sensor der betroffene Sensor
+     * @param i      neuer Genauigkeitswert
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
+    /**
+     * Gibt die Anzahl der heute gezählten Schritte zurück.
+     *
+     * @return die heutige Schrittanzahl basierend auf dem StepCounter oder StepDetector.
+     */
     public int getDailySteps() {
         if (stepCounterSensor != null) {
             int currentTotalSteps = prefs.getInt("lastTotalSteps", -1);

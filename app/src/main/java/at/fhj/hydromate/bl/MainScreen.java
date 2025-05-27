@@ -64,37 +64,100 @@ import at.fhj.hydromate.helper.StepCounterManager;
 import at.fhj.hydromate.database.HydrationDatabase;
 
 
+/**
+ * Klasse MainScreen ist die Hauptaktivität der Hydromate-App
+ * Sie zeigt die akutelle Hydrationsübersicht, Schritte, Temperatur und erlaubt Interaktionen
+ * mit Trink-und Einstellungsbildschirmen
+ *
+ * Sie verwaltet auch Benachrichtigungen, Standort- und Schrittzählerdaten sowie die Berechnung des empfohlenen Tagesbedarfs an Flüssigkeit
+ */
 public class MainScreen extends AppCompatActivity implements StepCounterManager.StepUpdateListener {
 
+    /**
+     * Schrittzähler-Manager zur Erfassung der täglichen Schritte
+     */
     private StepCounterManager stepCounterManager;
+    /**
+     * Helferklasse zur Standortermittlung
+     */
     private GPSHelper gpsHelper;
+
     private static final int ACTIVITY_RECOGNITION_REQUEST_CODE = 1000;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1002;
 
+    /**
+     * TextView zur Anzeige der Schritte
+     */
     private TextView tvStepsView;
+    /**
+     * TextView zur Anzeige der aktuellen Temperatur
+     */
     private TextView tvTemperatureView;
+    /**
+     * TextView zur Anzeige der getrunkenen Flüssigkeitsmenge
+     */
     private TextView textMili;
+    /**
+     * Fortschittsbalken für den Flüssigkeitsverbrauch
+     */
     private ProgressBar progressBar;
+    /**
+     * TextView für prozentualen Fortschritt
+     */
     private TextView tvProgressInfo;
 
+    /**
+     * Eingabefeld für das Datum
+     */
     private EditText etDate;
 
-
+    /**
+     * Empfohlene täglihce Flüssigkeitsaufnahme in ml
+     */
     private double dailyIntake;
+    /**
+     * Zugriff auf gespeichterte Benutzereinstellungen
+     */
     private SharedPreferences sp;
+    /**
+     * Zugriff auf die lokale Hydrationsdatenbank
+     */
     private HydrationDatabase db;
 
+    /**
+     * OpenWeatherMap API-Schlüssel
+     */
     private final String apiKey = "38127a56fbc2778ac0038588c589242a";
 
+    /**
+     * Aktuell ausgewähltes Datum
+     */
     private String date;
 
+    /**
+     * Datumsformatierer
+     */
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    /**
+     * Kalenderinstanz für Datumsauswahl
+     */
     private Calendar calendar = Calendar.getInstance();
 
+    /**
+     * Heutige Schrittanzahl
+     */
     private int stepsToday;
 
 
+    /**
+     * Wird beim Starten der Aktivität aufgerufen
+     * Initialisiert UI-Komponenten, Datenbank, Schrittzähler und Standortabfrage
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -203,7 +266,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     }
 
-
+    /**
+     * Aktualisiert die Hydrationsdaten für ein gegebenes Datum aus der Datenbank
+     * @param date Das zu aktualisierende Datum im Format yyyy-mm-dd
+     */
     private void updateHydrationDataForDate(String date) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -222,6 +288,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         });
     }
 
+    /**
+     * Aktualisiert die Getränkeliste für den aktuellen Taf im RecyclerView
+     * @param date Das anzuzeigende Datum
+     */
     private void updateList(String date) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -240,6 +310,11 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
+    /**
+     * Ruft die Temperaturdaten von OpenWeatherMap basierend auf dem Standort ab
+     * @param lat Breitengrad
+     * @param lon Längengrad
+     */
     public void fetchTemperature(double lat, double lon) {
         new Thread(() -> {
             try {
@@ -300,12 +375,19 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         }).start();
     }
 
+    /**
+     * Überprüft, ob die Berechtigung zur Aktivitötserkennung gewährt wurde
+     * @return true, wenn die Berechtigung vorhanden ist
+     */
     private boolean checkActivityPermission() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
                         == PackageManager.PERMISSION_GRANTED;
     }
 
+    /**
+     * Fordert die Berechtigung zur Aktivitätserkennung an
+     */
     private void requestActivityPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ActivityCompat.requestPermissions(this,
@@ -314,6 +396,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         }
     }
 
+    /**
+     * Überprüft, ob Standortberechtigungen gewährt wurden
+     * @return true, wenn Zugriff auf Standort erlaubt ist
+     */
     private boolean checkLocationPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED ||
@@ -322,6 +408,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
+    /**
+     * Fordert Standortberechtigungen vom Benutzer an
+     */
     private void requestLocationPermission() {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
@@ -329,18 +418,35 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
+    /**
+     * Wird aufgerufen, wenn die Schrittanzahl aktualisiert wurde
+     * @param stepsToday
+     */
     @Override
     public void onStepsUpdated(int stepsToday) {
         tvStepsView = findViewById(R.id.tvSteps);
         tvStepsView.setText(stepsToday + " Steps");
     }
 
+    /**
+     * Startet die Schrittzähler-Logik
+     */
     private void startStepCounter() {
         // Hier initialisierst du deinen StepCounterManager
         stepCounterManager = new StepCounterManager(this, this); // `this` ist StepUpdateListener
         stepCounterManager.start();
     }
 
+    /**
+     * Behandelt die Ergebnisse von Berechtigungsanfragen
+     * @param requestCode The request code passed in {@link #requestPermissions(
+     * android.app.Activity, String[], int)}
+     * @param permissions The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
+     *     or {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
+     *
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -401,6 +507,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         }
     }
 
+    /**
+     * Prüft, ob Benachrichtigungsrechte erteilt wurden
+     * @return
+     */
     private boolean checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
@@ -408,6 +518,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         return true; // Vor Android 13 ist sie automatisch erlaubt
     }
 
+    /**
+     * Fordert die Benachrichtigungsberechtigung an
+     */
     private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this,
@@ -416,9 +529,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
-
-
-
+    /**
+     * Startet eine Standortanfrage mithilfe von GPSHelper
+     */
     private void startLocationRequest() {
         gpsHelper.requestLocation(new LocationCallback() {
             @Override
@@ -433,6 +546,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
+    /**
+     * Startet die DrinkScreen-Aktivität mit übergebenem Getränketyp
+     * @param view Die geklickte Schaltfläche
+     */
     public void startDrinkScreen(View view) {
         Intent intent = new Intent(MainScreen.this, DrinkScreen.class);
 
@@ -456,6 +573,10 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     }
 
+    /**
+     * Löscht einen Eintrag anhand seiner ID
+     * @param view Das View-Element, dessen ID dem löschenden Eintrag entspricht
+     */
     public void deleteItem(View view) {
 
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -469,12 +590,26 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         });
     }
 
+    /**
+     * Öffnet die Einstellungsansicht
+     * @param view
+     */
     public void startSettingsScreen(View view) {
         Intent intent = new Intent(MainScreen.this, SettingScreen.class);
 
         startActivity(intent);
     }
 
+    /**
+     * Berechnet den empfohlenen täglichen Flüssigkeitsbedarf
+     * @param weight Gewicht in kg
+     * @param height Größe in cm
+     * @param age Alter in Jahren
+     * @param gender Geschlecht ("Male" oder "Female")
+     * @param temp Außentemperatur in °C
+     * @param steps Schritte pro Tag
+     * @return empfohlene Flüssigkeitsmenge in ml
+     */
     public double getDailyIntake(int weight, int height, int age, String gender, double temp, int steps) {
         double dailyIntake = (gender.toString().equals("Male") ? 35 : 31) * weight;
 
@@ -512,6 +647,12 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
     }
 
 
+    /**
+     * Setzt einen täglichen Trink-Erinnerungsalarm zur angegebenen Uhrzeit
+     * @param context Kontext der App
+     * @param hour Stunde (24-Stunden Format)
+     * @param minute Minute
+     */
     public void setTrinkErinnerungAlarm(Context context, int hour, int minute) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmReceiver.class);
