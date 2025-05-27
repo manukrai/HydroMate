@@ -71,7 +71,7 @@ public class DrinkScreen extends AppCompatActivity {
                 break;
             case "tea":
                 imageView.setImageResource(R.drawable.tea256);
-                drinkProcent = 1.00;
+                drinkProcent = 0.98;
                 break;
             case "milk":
                 imageView.setImageResource(R.drawable.milk256);
@@ -83,7 +83,7 @@ public class DrinkScreen extends AppCompatActivity {
                 break;
             case "liquor":
                 imageView.setImageResource(R.drawable.liquor256);
-                drinkProcent = 0.50;
+                drinkProcent = 0.60;
                 break;
         }
 

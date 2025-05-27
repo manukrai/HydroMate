@@ -1,5 +1,6 @@
 package at.fhj.hydromate.bl;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.PendingIntent;
@@ -67,8 +68,9 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private StepCounterManager stepCounterManager;
     private GPSHelper gpsHelper;
-    private static final int ACTIVITY_RECOGNITION_REQUEST_CODE = 1001;
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1002;
+    private static final int ACTIVITY_RECOGNITION_REQUEST_CODE = 1000;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1002;
 
     private TextView tvStepsView;
     private TextView tvTemperatureView;
@@ -89,6 +91,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private Calendar calendar = Calendar.getInstance();
+
+    private int stepsToday;
 
 
     @Override
@@ -172,23 +176,30 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         editor.putString("date", date);
         editor.commit();
 
+        stepCounterManager = new StepCounterManager(this, this);
+
+        // Sensoren starten
+        stepCounterManager.start();
+
+        stepsToday = stepCounterManager.getDailySteps();
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
                         new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
-                        1001);
+                        1002);
             }
         }
 
-        setTrinkErinnerungAlarm(this, 9, 0);
-        setTrinkErinnerungAlarm(this, 12, 0);
-        setTrinkErinnerungAlarm(this, 15, 0);
-        setTrinkErinnerungAlarm(this, 19, 0);
+
 
         findViewById(R.id.btNotification).setOnClickListener(v -> {
             new AlarmReceiver().onReceive(this, new Intent());
         });
+
+
 
     }
 
@@ -253,6 +264,8 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                 JSONObject json = new JSONObject(result.toString());
                 double temp = json.getJSONObject("main").getDouble("temp");
 
+
+
                 new Handler(Looper.getMainLooper()).post(() -> {
                     tvTemperatureView.setText(temp + "°C");
 
@@ -262,7 +275,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                             sp.getInt("age", 0),
                             sp.getString("gender", "Male"),
                             temp,
-                            5000
+                            stepsToday
                     );
 
                     updateHydrationDataForDate(sp.getString("date", sdf.format(calendar.getTime())));
@@ -280,7 +293,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                             sp.getInt("age", 0),
                             sp.getString("gender", "Male"),
                             0,
-                            5000
+                            stepsToday
                     );
                 });
             }
@@ -333,37 +346,77 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == ACTIVITY_RECOGNITION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startStepCounter();
-            } else {
-                tvStepsView.setText("Allow Actvity!");
-
-            }
-
-            // Standortberechtigung trotzdem prüfen!
-            if (!checkLocationPermission()) {
-                requestLocationPermission();
-            } else {
-                startLocationRequest();
-            }
-
-        } else if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            boolean permissionGranted = false;
-            for (int result : grantResults) {
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    permissionGranted = true;
-                    break;
+        switch (requestCode) {
+            case ACTIVITY_RECOGNITION_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startStepCounter();
+                } else {
+                    Toast.makeText(this, "Aktivitäten blockiert", Toast.LENGTH_SHORT).show();
                 }
-            }
 
-            if (permissionGranted) {
-                startLocationRequest();
-            } else {
-                tvTemperatureView.setText("Allow Location!");
-            }
+                // Danach: Standortberechtigung prüfen
+                if (!checkLocationPermission()) {
+                    requestLocationPermission();  // Löst LOCATION_PERMISSION_REQUEST_CODE aus
+                } else {
+                    startLocationRequest();
+
+                    // Danach: Benachrichtigungsberechtigung prüfen
+                    if (!checkNotificationPermission()) {
+                        requestNotificationPermission();  // Löst 1002 aus
+                    }
+                }
+                break;
+
+            case LOCATION_PERMISSION_REQUEST_CODE:
+                boolean locationGranted = false;
+                for (int result : grantResults) {
+                    if (result == PackageManager.PERMISSION_GRANTED) {
+                        locationGranted = true;
+                        break;
+                    }
+                }
+
+                if (locationGranted) {
+                    startLocationRequest();
+                } else {
+                    Toast.makeText(this, "Standort blockiert", Toast.LENGTH_SHORT).show();
+                }
+
+
+                if (!checkNotificationPermission()) {
+                    requestNotificationPermission();
+                }
+                break;
+
+            case 1002:  // POST_NOTIFICATIONS
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    setTrinkErinnerungAlarm(this, 9, 0);
+                    setTrinkErinnerungAlarm(this, 12, 0);
+                    setTrinkErinnerungAlarm(this, 15, 0);
+                    setTrinkErinnerungAlarm(this, 19, 0);
+                } else {
+                    Toast.makeText(this, "Benachrichtigungen blockiert", Toast.LENGTH_SHORT).show();
+                }
+                break;
         }
     }
+
+    private boolean checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        }
+        return true; // Vor Android 13 ist sie automatisch erlaubt
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1002);
+        }
+    }
+
+
+
 
 
     private void startLocationRequest() {
@@ -469,11 +522,6 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, 0);
-
-        // Wenn die Zeit heute schon vorbei ist, auf morgen verschieben
-        if (calendar.before(Calendar.getInstance())) {
-            calendar.add(Calendar.DATE, 1);
-        }
 
         // Wiederholender Alarm (täglich)
         alarmManager.setRepeating(
