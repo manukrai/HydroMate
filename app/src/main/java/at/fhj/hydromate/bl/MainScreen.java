@@ -439,8 +439,7 @@ public class MainScreen extends AppCompatActivity implements StepCounterManager.
 
     /**
      * Behandelt die Ergebnisse von Berechtigungsanfragen
-     * @param requestCode The request code passed in {@link #requestPermissions(
-     * android.app.Activity, String[], int)}
+     * @param requestCode The request code
      * @param permissions The requested permissions. Never null.
      * @param grantResults The grant results for the corresponding permissions
      *     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
